@@ -15,14 +15,22 @@ export default function CourseLibrary({ onSelectCourse }) {
   const loadCourses = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/courses');
 
-      if (!response.ok) {
-        throw new Error('שגיאה בטעינת הקורסים');
-      }
+      // קרא קורסים מ-localStorage
+      const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
 
-      const data = await response.json();
-      setCourses(data);
+      // צור אינדקס של הקורסים (רק המידע הבסיסי)
+      const coursesIndex = storedCourses.map(course => ({
+        id: course.id,
+        title: course.title,
+        description: course.description,
+        language: course.language,
+        tags: course.tags,
+        createdAt: course.createdAt,
+        lessonCount: course.lessons.length,
+      }));
+
+      setCourses(coursesIndex);
       setError('');
     } catch (err) {
       console.error('Error loading courses:', err);

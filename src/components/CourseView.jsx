@@ -15,14 +15,18 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
   const loadCourse = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/courses?courseId=${courseId}`);
 
-      if (!response.ok) {
-        throw new Error('שגיאה בטעינת הקורס');
+      // קרא קורסים מ-localStorage
+      const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
+
+      // חפש את הקורס לפי ID
+      const foundCourse = storedCourses.find(c => c.id === courseId);
+
+      if (!foundCourse) {
+        throw new Error('הקורס לא נמצא');
       }
 
-      const data = await response.json();
-      setCourse(data);
+      setCourse(foundCourse);
       setError('');
     } catch (err) {
       console.error('Error loading course:', err);
