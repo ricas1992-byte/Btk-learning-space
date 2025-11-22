@@ -2,10 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* BTK Brand Colors - משתני CSS גלובליים */
+:root {
+  --btk-navy: #0A1A2F;
+  --btk-gold: #D4AF37;
+  --btk-bronze: #B08A2E;
+  --btk-silver: #C0C0C0;
+  --btk-dark-gray: #313131;
+  --btk-light-gray: #E8E8E8;
+}
+
 /* RTL Support */
 body {
   direction: rtl;
   text-align: right;
+  background-color: #FFFFFF; /* רקע לבן קבוע */
 }
 
 /* Custom Scrollbar */
@@ -28,20 +39,20 @@ body {
 
 /* Lesson Content Styling */
 .lesson-content h2 {
-  @apply text-2xl font-bold mb-4 mt-6 text-gray-800;
+  @apply text-2xl font-bold mb-4 mt-6 text-btk-navy;
 }
 
 .lesson-content h3 {
-  @apply text-xl font-semibold mb-3 mt-5 text-gray-700;
+  @apply text-xl font-semibold mb-3 mt-5 text-btk-navy;
 }
 
 .lesson-content p {
-  @apply mb-4 text-gray-700 leading-relaxed;
+  @apply mb-4 text-btk-dark-gray leading-relaxed;
 }
 
 .lesson-content ul,
 .lesson-content ol {
-  @apply mb-4 mr-6 text-gray-700;
+  @apply mb-4 mr-6 text-btk-dark-gray;
 }
 
 .lesson-content li {
@@ -49,7 +60,7 @@ body {
 }
 
 .lesson-content strong {
-  @apply font-semibold text-gray-900;
+  @apply font-semibold text-btk-navy;
 }
 
 .lesson-content em {
@@ -57,13 +68,13 @@ body {
 }
 
 .lesson-content blockquote {
-  @apply border-r-4 border-blue-500 pr-4 py-2 my-4 bg-blue-50 text-gray-700 italic;
+  @apply border-r-4 border-btk-gold pr-4 py-2 my-4 bg-btk-light-gray text-btk-dark-gray italic;
 }
 
 /* Loading Spinner */
 .spinner {
   border: 3px solid #f3f3f3;
-  border-top: 3px solid #3b82f6;
+  border-top: 3px solid #D4AF37; /* BTK Gold */
   border-radius: 50%;
   width: 40px;
   height: 40px;
