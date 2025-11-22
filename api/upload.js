@@ -1,7 +1,7 @@
 import formidable from 'formidable';
 import mammoth from 'mammoth';
 import { v4 as uuidv4 } from 'uuid';
-import { put, list } from '@vercel/blob';
+import { put, head } from '@vercel/blob';
 import fs from 'fs/promises';
 
 export const config = {
@@ -152,12 +152,9 @@ async function updateCoursesIndex(course) {
 
   try {
     // קרא index קיים
-    const { blobs } = await list({ prefix: 'courses/index.json' });
-
-    if (blobs.length > 0) {
-      const response = await fetch(blobs[0].url);
-      index = await response.json();
-    }
+    const { url } = await head('courses-index.json');
+    const response = await fetch(url);
+    index = await response.json();
   } catch (err) {
     console.log('No existing index, creating new one');
   }
@@ -174,7 +171,7 @@ async function updateCoursesIndex(course) {
   });
 
   // שמור אינדקס מעודכן
-  await put('courses/index.json', JSON.stringify(index, null, 2), {
+  await put('courses-index.json', JSON.stringify(index, null, 2), {
     access: 'public',
     addRandomSuffix: false,
   });
