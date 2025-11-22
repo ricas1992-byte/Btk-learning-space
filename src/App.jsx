@@ -45,16 +45,19 @@ function App() {
     setCurrentView('upload');
   };
 
-  const navigateToCourse = async (courseId) => {
+  const navigateToCourse = (courseId) => {
     setSelectedCourseId(courseId);
 
-    // טען נתוני קורס
+    // טען נתוני קורס מ-localStorage
     try {
-      const response = await fetch(`/api/courses?courseId=${courseId}`);
-      if (response.ok) {
-        const courseData = await response.json();
+      const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
+      const courseData = storedCourses.find(c => c.id === courseId);
+
+      if (courseData) {
         setSelectedCourse(courseData);
         setCurrentView('course');
+      } else {
+        console.error('Course not found:', courseId);
       }
     } catch (error) {
       console.error('Error loading course:', error);
