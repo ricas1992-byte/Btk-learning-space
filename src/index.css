@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* RTL Support */
+body {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Lesson Content Styling */
+.lesson-content h2 {
+  @apply text-2xl font-bold mb-4 mt-6 text-gray-800;
+}
+
+.lesson-content h3 {
+  @apply text-xl font-semibold mb-3 mt-5 text-gray-700;
+}
+
+.lesson-content p {
+  @apply mb-4 text-gray-700 leading-relaxed;
+}
+
+.lesson-content ul,
+.lesson-content ol {
+  @apply mb-4 mr-6 text-gray-700;
+}
+
+.lesson-content li {
+  @apply mb-2;
+}
+
+.lesson-content strong {
+  @apply font-semibold text-gray-900;
+}
+
+.lesson-content em {
+  @apply italic;
+}
+
+.lesson-content blockquote {
+  @apply border-r-4 border-blue-500 pr-4 py-2 my-4 bg-blue-50 text-gray-700 italic;
+}
+
+/* Loading Spinner */
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

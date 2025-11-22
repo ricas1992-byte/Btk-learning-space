@@ -1,0 +1,14 @@
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,jsx}",
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Rubik', 'Arial', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+}
