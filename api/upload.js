@@ -1,7 +1,6 @@
 import formidable from 'formidable';
 import mammoth from 'mammoth';
 import { v4 as uuidv4 } from 'uuid';
-import { put, head } from '@vercel/blob';
 import fs from 'fs/promises';
 
 export const config = {
@@ -71,19 +70,11 @@ export default async function handler(req, res) {
       lessons,
     };
 
-    // שמור את הקורס ב-Vercel Blob Storage
-    const courseBlob = await put(`courses/${courseId}.json`, JSON.stringify(course, null, 2), {
-      access: 'public',
-      addRandomSuffix: false,
-    });
-
-    // עדכן אינדקס קורסים
-    await updateCoursesIndex(course);
-
+    // החזר את הקורס ללקוח (לשמירה ב-localStorage)
     res.status(200).json({
       success: true,
-      courseId: course.id,
-      message: 'הקורס הועלה בהצלחה'
+      course: course,
+      message: 'הקורס עובד בהצלחה'
     });
   } catch (error) {
     console.error('Upload error:', error);
@@ -144,35 +135,3 @@ function parseHTMLtoLessons(html) {
   return lessons;
 }
 
-/**
- * עדכן אינדקס קורסים ב-Vercel Blob Storage
- */
-async function updateCoursesIndex(course) {
-  let index = [];
-
-  try {
-    // קרא index קיים
-    const { url } = await head('courses-index.json');
-    const response = await fetch(url);
-    index = await response.json();
-  } catch (err) {
-    console.log('No existing index, creating new one');
-  }
-
-  // הוסף קורס חדש לאינדקס
-  index.push({
-    id: course.id,
-    title: course.title,
-    description: course.description,
-    language: course.language,
-    tags: course.tags,
-    createdAt: course.createdAt,
-    lessonCount: course.lessons.length,
-  });
-
-  // שמור אינדקס מעודכן
-  await put('courses-index.json', JSON.stringify(index, null, 2), {
-    access: 'public',
-    addRandomSuffix: false,
-  });
-}

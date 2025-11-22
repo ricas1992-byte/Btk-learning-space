@@ -72,6 +72,13 @@ export default function UploadForm({ onUploadSuccess }) {
 
       const result = await response.json();
 
+      // שמור את הקורס ב-localStorage
+      if (result.success && result.course) {
+        const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
+        storedCourses.push(result.course);
+        localStorage.setItem('courses', JSON.stringify(storedCourses));
+      }
+
       setStatus('success');
 
       // איפוס הטופס
@@ -87,7 +94,7 @@ export default function UploadForm({ onUploadSuccess }) {
 
         // קריאה ל-callback
         if (onUploadSuccess) {
-          onUploadSuccess(result.courseId);
+          onUploadSuccess(result.course.id);
         }
       }, 2000);
 
