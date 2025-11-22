@@ -45,6 +45,29 @@ export default function CourseLibrary({ onSelectCourse }) {
     return date.toLocaleDateString('he-IL');
   };
 
+  const handleDelete = (courseId) => {
+    const course = courses.find(c => c.id === courseId);
+
+    const confirmed = window.confirm(
+      `האם אתה בטוח שברצונך למחוק את הקורס "${course.title}"?\n\nפעולה זו בלתי הפיכה.`
+    );
+
+    if (confirmed) {
+      // קרא את הקורסים המלאים מ-localStorage
+      const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
+      // מחק את הקורס
+      const updatedCourses = storedCourses.filter(c => c.id !== courseId);
+      // עדכן ב-localStorage
+      localStorage.setItem('courses', JSON.stringify(updatedCourses));
+
+      // עדכן את המצב המקומי
+      setCourses(courses.filter(c => c.id !== courseId));
+
+      // הודעת הצלחה
+      alert('הקורס נמחק בהצלחה');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -93,8 +116,20 @@ export default function CourseLibrary({ onSelectCourse }) {
         {courses.map((course) => (
           <div
             key={course.id}
-            className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6"
+            className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 relative"
           >
+            {/* כפתור מחיקה */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(course.id);
+              }}
+              className="absolute top-2 left-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors duration-200"
+              title="מחק קורס"
+            >
+              🗑️
+            </button>
+
             {/* אייקון */}
             <div className="text-4xl mb-3">📖</div>
 
