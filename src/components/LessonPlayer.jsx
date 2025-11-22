@@ -45,7 +45,7 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
       <div className="max-w-4xl mx-auto p-6">
         <button
           onClick={onBack}
-          className="mb-4 text-blue-500 hover:text-blue-700 flex items-center gap-2"
+          className="mb-4 text-btk-gold hover:text-btk-bronze flex items-center gap-2 font-medium"
         >
           <span>←</span>
           <span>חזרה לקורס</span>
@@ -60,10 +60,10 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
   return (
     <div className="max-w-4xl mx-auto">
       {/* כפתור חזרה */}
-      <div className="bg-white border-b border-gray-200 p-4">
+      <div className="bg-white border-b border-btk-light-gray p-4">
         <button
           onClick={onBack}
-          className="text-blue-500 hover:text-blue-700 flex items-center gap-2 font-medium"
+          className="text-btk-gold hover:text-btk-bronze flex items-center gap-2 font-medium"
         >
           <span>←</span>
           <span>חזרה לקורס</span>
@@ -71,9 +71,9 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
       </div>
 
       {/* כותרת היחידה */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6">
+      <div className="bg-gradient-to-r from-btk-navy to-btk-dark-gray text-white p-6">
         <div className="flex items-center gap-3">
-          <span className="text-3xl font-bold">{currentLesson.order}</span>
+          <span className="text-3xl font-bold text-btk-gold">{currentLesson.order}</span>
           <h1 className="text-2xl font-bold">{currentLesson.title}</h1>
         </div>
       </div>
@@ -94,25 +94,25 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
       />
 
       {/* ניווט בין יחידות */}
-      <div className="bg-white border-t border-gray-200 p-4">
+      <div className="bg-white border-t border-btk-light-gray p-4">
         <div className="flex justify-between items-center">
           <button
             onClick={goToPreviousLesson}
             disabled={lessonIndex === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-btk-light-gray text-btk-navy border border-btk-light-gray font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span>←</span>
             <span>יחידה קודמת</span>
           </button>
 
-          <div className="text-gray-600">
+          <div className="text-btk-dark-gray">
             יחידה {lessonIndex + 1} מתוך {course.lessons.length}
           </div>
 
           <button
             onClick={goToNextLesson}
             disabled={lessonIndex === course.lessons.length - 1}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-btk-gold hover:bg-btk-bronze text-btk-navy font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span>יחידה הבאה</span>
             <span>→</span>

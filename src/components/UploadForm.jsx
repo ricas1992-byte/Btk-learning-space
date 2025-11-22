@@ -116,14 +116,14 @@ export default function UploadForm({ onUploadSuccess }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* בחירת קובץ */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-btk-dark-gray font-medium mb-2">
               בחר קובץ DOCX *
             </label>
             <input
               type="file"
               accept=".docx"
               onChange={handleFileChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-btk-light-gray rounded-lg p-2 focus:ring-2 focus:ring-btk-gold focus:border-transparent"
               disabled={status === 'uploading' || status === 'processing'}
             />
             {file && (
@@ -135,7 +135,7 @@ export default function UploadForm({ onUploadSuccess }) {
 
           {/* שם הקורס */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-btk-dark-gray font-medium mb-2">
               שם הקורס *
             </label>
             <input
@@ -143,7 +143,7 @@ export default function UploadForm({ onUploadSuccess }) {
               name="title"
               value={formData.title}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-btk-light-gray rounded-lg p-2 focus:ring-2 focus:ring-btk-gold focus:border-transparent"
               placeholder="לדוגמה: מבוא לפסיכולוגיה"
               disabled={status === 'uploading' || status === 'processing'}
               required
@@ -152,14 +152,14 @@ export default function UploadForm({ onUploadSuccess }) {
 
           {/* תיאור */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-btk-dark-gray font-medium mb-2">
               תיאור
             </label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-btk-light-gray rounded-lg p-2 focus:ring-2 focus:ring-btk-gold focus:border-transparent"
               placeholder="תיאור קצר של הקורס..."
               rows="3"
               disabled={status === 'uploading' || status === 'processing'}
@@ -168,14 +168,14 @@ export default function UploadForm({ onUploadSuccess }) {
 
           {/* שפה */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-btk-dark-gray font-medium mb-2">
               שפה *
             </label>
             <select
               name="language"
               value={formData.language}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-btk-light-gray rounded-lg p-2 focus:ring-2 focus:ring-btk-gold focus:border-transparent"
               disabled={status === 'uploading' || status === 'processing'}
             >
               <option value="he">עברית</option>
@@ -185,7 +185,7 @@ export default function UploadForm({ onUploadSuccess }) {
 
           {/* תגיות */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-btk-dark-gray font-medium mb-2">
               תגיות
             </label>
             <input
@@ -193,25 +193,25 @@ export default function UploadForm({ onUploadSuccess }) {
               name="tags"
               value={formData.tags}
               onChange={handleInputChange}
-              className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full border border-btk-light-gray rounded-lg p-2 focus:ring-2 focus:ring-btk-gold focus:border-transparent"
               placeholder="מוטוריקה, פסיכולוגיה (מופרדות בפסיקים)"
               disabled={status === 'uploading' || status === 'processing'}
             />
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-btk-dark-gray mt-1">
               הפרד תגיות בפסיקים
             </p>
           </div>
 
           {/* הודעות סטטוס */}
           {status === 'uploading' && (
-            <div className="text-blue-600 flex items-center gap-2">
+            <div className="text-btk-gold flex items-center gap-2">
               <div className="spinner"></div>
               <span>מעלה קובץ...</span>
             </div>
           )}
 
           {status === 'processing' && (
-            <div className="text-blue-600 flex items-center gap-2">
+            <div className="text-btk-gold flex items-center gap-2">
               <div className="spinner"></div>
               <span>מעבד DOCX ויוצר יחידות...</span>
             </div>
@@ -239,7 +239,7 @@ export default function UploadForm({ onUploadSuccess }) {
           <button
             type="submit"
             disabled={status === 'uploading' || status === 'processing' || status === 'success'}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="w-full bg-btk-gold hover:bg-btk-bronze text-btk-navy font-bold py-3 rounded-lg transition shadow-sm disabled:bg-btk-light-gray disabled:cursor-not-allowed disabled:text-btk-dark-gray"
           >
             צור קורס ללמידה
           </button>

@@ -73,7 +73,7 @@ export default function CourseLibrary({ onSelectCourse }) {
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
           <div className="spinner mx-auto mb-4"></div>
-          <p className="text-gray-600">טוען קורסים...</p>
+          <p className="text-btk-dark-gray">טוען קורסים...</p>
         </div>
       </div>
     );
@@ -94,10 +94,10 @@ export default function CourseLibrary({ onSelectCourse }) {
       <div className="max-w-4xl mx-auto p-6">
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
           <span className="text-6xl mb-4 block">📚</span>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <h2 className="text-2xl font-bold text-btk-navy mb-2">
             אין עדיין קורסים
           </h2>
-          <p className="text-gray-600">
+          <p className="text-btk-dark-gray">
             התחל על ידי העלאת קורס DOCX חדש
           </p>
         </div>
@@ -116,7 +116,7 @@ export default function CourseLibrary({ onSelectCourse }) {
         {courses.map((course) => (
           <div
             key={course.id}
-            className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 relative"
+            className="bg-white rounded-lg border border-btk-light-gray shadow-sm hover:shadow-md transition-shadow p-6 relative"
           >
             {/* כפתור מחיקה */}
             <button
@@ -134,13 +134,13 @@ export default function CourseLibrary({ onSelectCourse }) {
             <div className="text-4xl mb-3">📖</div>
 
             {/* שם הקורס */}
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
+            <h3 className="text-xl font-bold text-btk-navy mb-2">
               {course.title}
             </h3>
 
             {/* תיאור */}
             {course.description && (
-              <p className="text-gray-600 mb-3 line-clamp-2">
+              <p className="text-btk-dark-gray mb-3 line-clamp-2">
                 {course.description}
               </p>
             )}
@@ -151,7 +151,7 @@ export default function CourseLibrary({ onSelectCourse }) {
                 {course.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="bg-blue-100 text-blue-700 text-sm px-2 py-1 rounded"
+                    className="bg-btk-light-gray text-btk-dark-gray text-sm px-3 py-1 rounded-full"
                   >
                     #{tag}
                   </span>
@@ -160,21 +160,21 @@ export default function CourseLibrary({ onSelectCourse }) {
             )}
 
             {/* מידע נוסף */}
-            <div className="text-sm text-gray-500 mb-4">
+            <div className="text-sm text-btk-dark-gray mb-4">
               <span>{course.lessonCount} יחידות</span>
               <span className="mx-2">|</span>
               <span>{course.language === 'he' ? 'עברית' : 'אנגלית'}</span>
             </div>
 
             {/* תאריך */}
-            <div className="text-xs text-gray-400 mb-4">
+            <div className="text-xs text-btk-dark-gray mb-4 opacity-70">
               נוצר ב-{formatDate(course.createdAt)}
             </div>
 
             {/* כפתור צפייה */}
             <button
               onClick={() => onSelectCourse(course.id)}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded-lg transition"
+              className="w-full bg-btk-gold hover:bg-btk-bronze text-btk-navy font-semibold py-2 rounded-lg transition"
             >
               צפייה בקורס
             </button>

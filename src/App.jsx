@@ -75,9 +75,9 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* ניווט עליון */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white shadow-sm border-b border-btk-light-gray">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* לוגו */}
@@ -86,7 +86,7 @@ function App() {
               onClick={navigateToLibrary}
             >
               <span className="text-3xl">📚</span>
-              <h1 className="text-2xl font-bold text-gray-800">
+              <h1 className="text-2xl font-bold text-btk-navy">
                 מרחב הלמידה
               </h1>
             </div>
@@ -97,8 +97,8 @@ function App() {
                 onClick={navigateToLibrary}
                 className={`px-4 py-2 rounded-lg font-medium transition ${
                   currentView === 'library'
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-btk-gold text-btk-navy'
+                    : 'text-btk-dark-gray hover:bg-btk-light-gray'
                 }`}
               >
                 ספרייה
@@ -107,8 +107,8 @@ function App() {
                 onClick={navigateToUpload}
                 className={`px-4 py-2 rounded-lg font-medium transition ${
                   currentView === 'upload'
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-btk-gold text-btk-navy'
+                    : 'text-btk-dark-gray hover:bg-btk-light-gray'
                 }`}
               >
                 העלאת קורס
@@ -160,8 +160,8 @@ function App() {
       </main>
 
       {/* פוטר */}
-      <footer className="bg-white border-t border-gray-200 mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-gray-600">
+      <footer className="bg-white border-t border-btk-light-gray mt-12">
+        <div className="max-w-7xl mx-auto px-4 py-6 text-center text-btk-dark-gray">
           <p>מרחב הלמידה - מערכת ספריית למידה עם הקראה אוטומטית</p>
           <p className="text-sm mt-1">
             נבנה עם React, Vite, Tailwind CSS ו-Web Speech API

@@ -41,7 +41,7 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
           <div className="spinner mx-auto mb-4"></div>
-          <p className="text-gray-600">טוען קורס...</p>
+          <p className="text-btk-dark-gray">טוען קורס...</p>
         </div>
       </div>
     );
@@ -52,7 +52,7 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
       <div className="max-w-4xl mx-auto p-6">
         <button
           onClick={onBack}
-          className="mb-4 text-blue-500 hover:text-blue-700 flex items-center gap-2"
+          className="mb-4 text-btk-gold hover:text-btk-bronze flex items-center gap-2 font-medium"
         >
           <span>←</span>
           <span>חזרה לספרייה</span>
@@ -69,22 +69,22 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
       {/* כפתור חזרה */}
       <button
         onClick={onBack}
-        className="mb-6 text-blue-500 hover:text-blue-700 flex items-center gap-2 font-medium"
+        className="mb-6 text-btk-gold hover:text-btk-bronze flex items-center gap-2 font-medium"
       >
         <span>←</span>
         <span>חזרה לספרייה</span>
       </button>
 
       {/* כותרת הקורס */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-white rounded-lg border border-btk-light-gray shadow-sm p-6 mb-6">
         <div className="flex items-start gap-3 mb-4">
           <span className="text-5xl">📖</span>
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">
+            <h1 className="text-3xl font-bold text-btk-navy">
               {course.title}
             </h1>
             {course.description && (
-              <p className="text-gray-600 mt-2">
+              <p className="text-btk-dark-gray mt-2">
                 {course.description}
               </p>
             )}
@@ -97,7 +97,7 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
             {course.tags.map((tag, index) => (
               <span
                 key={index}
-                className="bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full"
+                className="bg-btk-light-gray text-btk-dark-gray text-sm px-3 py-1 rounded-full"
               >
                 #{tag}
               </span>
@@ -107,8 +107,8 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
       </div>
 
       {/* רשימת יחידות */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+      <div className="bg-white rounded-lg border border-btk-light-gray shadow-sm p-6">
+        <h2 className="text-2xl font-bold text-btk-navy mb-4">
           יחידות הלימוד
         </h2>
 
@@ -117,20 +117,20 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
             course.lessons.map((lesson) => (
               <div
                 key={lesson.id}
-                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition flex items-center justify-between"
+                className="border border-btk-light-gray rounded-lg p-4 hover:bg-btk-light-gray hover:bg-opacity-30 transition flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-blue-500">
+                  <span className="text-2xl font-bold text-btk-gold">
                     {lesson.order}
                   </span>
-                  <h3 className="text-lg font-medium text-gray-800">
+                  <h3 className="text-lg font-medium text-btk-navy">
                     {lesson.title}
                   </h3>
                 </div>
 
                 <button
                   onClick={() => onSelectLesson(lesson.id)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition flex items-center gap-2"
+                  className="bg-btk-gold hover:bg-btk-bronze text-btk-navy px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2"
                 >
                   <span>למידה</span>
                   <span>→</span>
@@ -138,7 +138,7 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
               </div>
             ))
           ) : (
-            <p className="text-gray-600 text-center py-4">
+            <p className="text-btk-dark-gray text-center py-4">
               אין יחידות בקורס זה
             </p>
           )}
