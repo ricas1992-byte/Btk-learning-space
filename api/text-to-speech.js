@@ -1,4 +1,4 @@
-import textToSpeech from '@google-cloud/text-to-speech';
+import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 
 export const config = {
   api: {
@@ -27,14 +27,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'טקסט חובה' });
     }
 
-    // אתחול לקוח Google Cloud Text-to-Speech
-    const credentials = process.env.GOOGLE_CREDENTIALS
-      ? JSON.parse(process.env.GOOGLE_CREDENTIALS)
-      : undefined;
+    // קריאת credentials מ-GOOGLE_CREDENTIALS
+    if (!process.env.GOOGLE_CREDENTIALS) {
+      throw new Error('GOOGLE_CREDENTIALS environment variable is not set');
+    }
 
-    const client = new textToSpeech.TextToSpeechClient({
-      credentials,
-    });
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+
+    // אתחול לקוח Google Cloud Text-to-Speech
+    const client = new TextToSpeechClient({ credentials });
 
     // הגדרות הבקשה
     const request = {
