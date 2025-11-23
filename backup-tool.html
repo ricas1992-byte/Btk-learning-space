@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>כלי גיבוי - BTK Learning Space</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e3a8a;
+            text-align: center;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        button {
+            background: #d4af37;
+            color: #1e3a8a;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #b8933a;
+        }
+        .success {
+            color: #059669;
+            padding: 10px;
+            background: #d1fae5;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+        .info {
+            color: #1e40af;
+            padding: 10px;
+            background: #dbeafe;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ כלי גיבוי וש復יחזור - BTK Learning Space</h1>
+
+        <!-- ייצוא -->
+        <div class="section">
+            <h2>📤 ייצוא קורסים (Backup)</h2>
+            <div class="info">
+                <strong>הוראות:</strong> לחץ על הכפתור כדי לייצא את כל הקורסים שלך לקובץ JSON.
+            </div>
+            <button onclick="exportCourses()">ייצא את כל הקורסים</button>
+            <div id="exportSuccess" class="success">✅ הקורסים יוצאו בהצלחה!</div>
+        </div>
+
+        <!-- ייבוא -->
+        <div class="section">
+            <h2>📥 ייבוא קורסים (Restore)</h2>
+            <div class="info">
+                <strong>הוראות:</strong> בחר את קובץ ה-JSON שייצאת קודם.
+                <br><strong>⚠️ אזהרה:</strong> פעולה זו תדרוס את כל הקורסים הקיימים!
+            </div>
+            <input type="file" id="fileInput" accept=".json" onchange="importCourses(event)">
+            <div id="importSuccess" class="success"></div>
+        </div>
+
+        <!-- צפייה בנתונים -->
+        <div class="section">
+            <h2>👁️ צפייה בנתונים</h2>
+            <div class="info">
+                לחץ כדי לראות את הנתונים הנוכחיים ב-localStorage
+            </div>
+            <button onclick="viewData()">הצג נתונים</button>
+            <textarea id="dataView" placeholder="הנתונים יוצגו כאן..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        // ייצוא קורסים לקובץ JSON
+        function exportCourses() {
+            try {
+                // קרא את כל הנתונים מ-localStorage
+                const courses = localStorage.getItem('courses');
+
+                if (!courses || courses === '[]') {
+                    alert('❌ לא נמצאו קורסים לייצוא');
+                    return;
+                }
+
+                // צור אובייקט גיבוי עם timestamp
+                const backup = {
+                    version: '1.0',
+                    timestamp: new Date().toISOString(),
+                    courses: JSON.parse(courses)
+                };
+
+                // המר ל-JSON
+                const dataStr = JSON.stringify(backup, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+                // צור קישור להורדה
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+
+                // שם הקובץ עם תאריך
+                const date = new Date().toISOString().split('T')[0];
+                link.download = `btk-courses-backup-${date}.json`;
+
+                // הורד
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                // הצג הודעת הצלחה
+                const successMsg = document.getElementById('exportSuccess');
+                successMsg.style.display = 'block';
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 3000);
+
+                console.log('✅ הקורסים יוצאו בהצלחה');
+            } catch (error) {
+                alert('❌ שגיאה בייצוא: ' + error.message);
+                console.error('Export error:', error);
+            }
+        }
+
+        // ייבוא קורסים מקובץ JSON
+        function importCourses(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+
+                    // בדיקות תקינות
+                    if (!backup.courses || !Array.isArray(backup.courses)) {
+                        throw new Error('פורמט קובץ לא תקין');
+                    }
+
+                    // שאל אישור
+                    const confirmMsg = `האם אתה בטוח שברצונך לשחזר ${backup.courses.length} קורסים?\n\n` +
+                                      `תאריך הגיבוי: ${new Date(backup.timestamp).toLocaleString('he-IL')}\n\n` +
+                                      `⚠️ פעולה זו תדרוס את כל הקורסים הקיימים!`;
+
+                    if (!confirm(confirmMsg)) {
+                        return;
+                    }
+
+                    // שמור ב-localStorage
+                    localStorage.setItem('courses', JSON.stringify(backup.courses));
+
+                    // הצג הודעת הצלחה
+                    const successMsg = document.getElementById('importSuccess');
+                    successMsg.textContent = `✅ ${backup.courses.length} קורסים שוחזרו בהצלחה!`;
+                    successMsg.style.display = 'block';
+
+                    setTimeout(() => {
+                        successMsg.style.display = 'none';
+                    }, 5000);
+
+                    console.log('✅ הקורסים שוחזרו בהצלחה');
+                } catch (error) {
+                    alert('❌ שגיאה בייבוא: ' + error.message);
+                    console.error('Import error:', error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // צפייה בנתונים
+        function viewData() {
+            try {
+                const courses = localStorage.getItem('courses');
+                const parsed = courses ? JSON.parse(courses) : [];
+
+                const dataView = document.getElementById('dataView');
+                dataView.value = JSON.stringify(parsed, null, 2);
+
+                console.log('נמצאו', parsed.length, 'קורסים');
+            } catch (error) {
+                alert('❌ שגיאה בקריאת נתונים: ' + error.message);
+                console.error('View error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
