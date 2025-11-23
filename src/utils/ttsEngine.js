@@ -1,45 +1,26 @@
 /**
- * TTSEngine - Web Speech API Wrapper
- * מנוע הקראה אוטומטית באמצעות Web Speech API
+ * TTSEngine - Google Cloud Text-to-Speech Wrapper
+ * מנוע הקראה אוטומטית באמצעות Google Cloud Text-to-Speech API
  */
 export class TTSEngine {
   constructor() {
-    this.synth = window.speechSynthesis;
-    this.voice = null;
-    this.utterance = null;
+    this.audio = null;
     this.isInitialized = false;
+    this.isPlaying = false;
+    this.isPausedState = false;
+    this.currentText = null;
+    this.onEndCallback = null;
+    this.onProgressCallback = null;
+    this.progressInterval = null;
   }
 
   /**
-   * אתחול המנוע וטעינת קולות
+   * אתחול המנוע
    * @param {string} lang - שפה (he-IL / en-US)
    */
   async init(lang = 'he-IL') {
-    return new Promise((resolve) => {
-      const loadVoices = () => {
-        const voices = this.synth.getVoices();
-
-        if (voices.length === 0) {
-          // חלק מהדפדפנים טוענים את הקולות באופן אסינכרוני
-          return;
-        }
-
-        // חפש קול מתאים לשפה
-        const langPrefix = lang.split('-')[0];
-        this.voice = voices.find(v => v.lang.startsWith(langPrefix)) || voices[0];
-
-        this.isInitialized = true;
-        resolve(this.voice);
-      };
-
-      // טען קולות
-      loadVoices();
-
-      // אירוע טעינת קולות (נדרש בחלק מהדפדפנים)
-      if (this.synth.onvoiceschanged !== undefined) {
-        this.synth.onvoiceschanged = loadVoices;
-      }
-    });
+    this.isInitialized = true;
+    return Promise.resolve({ lang });
   }
 
   /**
@@ -48,7 +29,7 @@ export class TTSEngine {
    * @param {function} onEnd - callback כשההקראה נגמרת
    * @param {function} onProgress - callback לעדכון התקדמות
    */
-  speak(text, onEnd = null, onProgress = null) {
+  async speak(text, onEnd = null, onProgress = null) {
     if (!this.isInitialized) {
       console.warn('TTS Engine לא אותחל');
       return;
@@ -57,39 +38,122 @@ export class TTSEngine {
     // עצור הקראה קודמת
     this.stop();
 
-    // צור utterance חדש
-    this.utterance = new SpeechSynthesisUtterance(text);
-    this.utterance.voice = this.voice;
-    this.utterance.lang = this.voice?.lang || 'he-IL';
-    this.utterance.rate = 0.9; // קצב קריאה
-    this.utterance.pitch = 1.0; // גובה קול
-    this.utterance.volume = 1.0; // עוצמה
+    this.currentText = text;
+    this.onEndCallback = onEnd;
+    this.onProgressCallback = onProgress;
 
-    // אירועים
-    if (onEnd) {
-      this.utterance.onend = onEnd;
-    }
+    try {
+      // שלח בקשה ל-API
+      const response = await fetch('/api/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
 
-    if (onProgress) {
-      this.utterance.onboundary = (event) => {
-        onProgress(event.charIndex, text.length);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.audio) {
+        throw new Error('שגיאה בקבלת אודיו מהשרת');
+      }
+
+      // המר base64 ל-Blob
+      const audioBlob = this.base64ToBlob(data.audio, 'audio/mp3');
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // צור אלמנט אודיו חדש
+      this.audio = new Audio(audioUrl);
+      this.isPlaying = true;
+      this.isPausedState = false;
+
+      // אירוע סיום
+      this.audio.onended = () => {
+        this.isPlaying = false;
+        this.isPausedState = false;
+        this.stopProgressTracking();
+        if (this.onEndCallback) {
+          this.onEndCallback();
+        }
+        URL.revokeObjectURL(audioUrl);
       };
+
+      // אירוע שגיאה
+      this.audio.onerror = (error) => {
+        console.error('TTS Audio Error:', error);
+        this.isPlaying = false;
+        this.isPausedState = false;
+        this.stopProgressTracking();
+      };
+
+      // התחל הקראה
+      await this.audio.play();
+
+      // התחל מעקב התקדמות
+      if (onProgress) {
+        this.startProgressTracking();
+      }
+    } catch (error) {
+      console.error('TTS Error:', error);
+      this.isPlaying = false;
+      this.isPausedState = false;
     }
+  }
 
-    this.utterance.onerror = (event) => {
-      console.error('TTS Error:', event.error);
-    };
+  /**
+   * המר base64 ל-Blob
+   */
+  base64ToBlob(base64, mimeType) {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  }
 
-    // התחל הקראה
-    this.synth.speak(this.utterance);
+  /**
+   * התחל מעקב התקדמות
+   */
+  startProgressTracking() {
+    this.stopProgressTracking();
+    this.progressInterval = setInterval(() => {
+      if (this.audio && this.onProgressCallback) {
+        const currentTime = this.audio.currentTime;
+        const duration = this.audio.duration;
+        if (duration > 0) {
+          const progress = (currentTime / duration) * 100;
+          // המר ל-charIndex לתאימות עם ממשק הקיים
+          const charIndex = Math.floor((currentTime / duration) * (this.currentText?.length || 0));
+          this.onProgressCallback(charIndex, this.currentText?.length || 0);
+        }
+      }
+    }, 100);
+  }
+
+  /**
+   * עצור מעקב התקדמות
+   */
+  stopProgressTracking() {
+    if (this.progressInterval) {
+      clearInterval(this.progressInterval);
+      this.progressInterval = null;
+    }
   }
 
   /**
    * השהה הקראה
    */
   pause() {
-    if (this.synth.speaking && !this.synth.paused) {
-      this.synth.pause();
+    if (this.audio && this.isPlaying && !this.isPausedState) {
+      this.audio.pause();
+      this.isPausedState = true;
+      this.isPlaying = false;
     }
   }
 
@@ -97,8 +161,10 @@ export class TTSEngine {
    * המשך הקראה
    */
   resume() {
-    if (this.synth.paused) {
-      this.synth.resume();
+    if (this.audio && this.isPausedState) {
+      this.audio.play();
+      this.isPausedState = false;
+      this.isPlaying = true;
     }
   }
 
@@ -106,45 +172,50 @@ export class TTSEngine {
    * עצור הקראה
    */
   stop() {
-    this.synth.cancel();
+    if (this.audio) {
+      this.audio.pause();
+      this.audio.currentTime = 0;
+      this.audio = null;
+    }
+    this.isPlaying = false;
+    this.isPausedState = false;
+    this.stopProgressTracking();
   }
 
   /**
    * בדוק אם מקריא כרגע
    */
   isSpeaking() {
-    return this.synth.speaking;
+    return this.isPlaying;
   }
 
   /**
    * בדוק אם מושהה
    */
   isPaused() {
-    return this.synth.paused;
+    return this.isPausedState;
   }
 
   /**
-   * קבל רשימת קולות זמינים
+   * קבל רשימת קולות זמינים (תאימות לממשק הקודם)
    */
   getVoices() {
-    return this.synth.getVoices();
+    return [];
   }
 
   /**
-   * שנה קול
-   * @param {SpeechSynthesisVoice} voice
+   * שנה קול (תאימות לממשק הקודם)
+   * @param {object} voice
    */
   setVoice(voice) {
-    this.voice = voice;
+    // לא רלוונטי ל-Google Cloud TTS
   }
 
   /**
-   * שנה קצב קריאה
+   * שנה קצב קריאה (תאימות לממשק הקודם)
    * @param {number} rate - 0.1 עד 10 (1 = רגיל)
    */
   setRate(rate) {
-    if (this.utterance) {
-      this.utterance.rate = rate;
-    }
+    // לא רלוונטי ל-Google Cloud TTS (קצב מוגדר ב-API)
   }
 }
