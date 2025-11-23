@@ -28,11 +28,12 @@ export default async function handler(req, res) {
     }
 
     // קריאת credentials מ-GOOGLE_CREDENTIALS
-    if (!process.env.GOOGLE_CREDENTIALS) {
+    const credentialsJson = process.env.GOOGLE_CREDENTIALS;
+    if (!credentialsJson) {
       throw new Error('GOOGLE_CREDENTIALS environment variable is not set');
     }
 
-    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    const credentials = JSON.parse(credentialsJson);
 
     // אתחול לקוח Google Cloud Text-to-Speech
     const client = new TextToSpeechClient({ credentials });
