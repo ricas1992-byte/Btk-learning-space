@@ -1,4 +1,4 @@
-import { TextToSpeechClient } from '@google-cloud/text-to-speech';
+import { GoogleAuth } from 'google-auth-library';
 
 export const config = {
   api: {
@@ -35,11 +35,18 @@ export default async function handler(req, res) {
 
     const credentials = JSON.parse(credentialsJson);
 
-    // אתחול לקוח Google Cloud Text-to-Speech
-    const client = new TextToSpeechClient({ credentials });
+    // צור Google Auth client
+    const auth = new GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
 
-    // הגדרות הבקשה
-    const request = {
+    // קבל access token
+    const client = await auth.getClient();
+    const accessToken = await client.getAccessToken();
+
+    // הכן את גוף הבקשה ל-REST API
+    const requestBody = {
       input: { text },
       voice: {
         languageCode: 'he-IL',
@@ -53,16 +60,27 @@ export default async function handler(req, res) {
       },
     };
 
-    // שלח בקשה ל-Google Cloud TTS API
-    const [response] = await client.synthesizeSpeech(request);
+    // שלח בקשה ישירות ל-Google Text-to-Speech REST API
+    const response = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
 
-    // המר את האודיו ל-base64
-    const audioBase64 = response.audioContent.toString('base64');
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Google API error: ${response.status} ${response.statusText} - ${errorData}`);
+    }
 
-    // החזר את האודיו
+    const data = await response.json();
+
+    // החזר את האודיו (כבר מגיע ב-base64 מה-API)
     res.status(200).json({
       success: true,
-      audio: audioBase64,
+      audio: data.audioContent,
       format: 'mp3',
     });
   } catch (error) {
