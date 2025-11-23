@@ -107,6 +107,8 @@ export class TTSEngine {
    */
   async _speakWithGoogle(text) {
     try {
+      console.log('🔄 [TTSEngine] שולח בקשה ל-Google TTS API...');
+
       // קריאה ל-API
       const response = await fetch('/api/text-to-speech', {
         method: 'POST',
@@ -117,17 +119,37 @@ export class TTSEngine {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ [TTSEngine] Google TTS API error:', errorData);
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { error: await response.text() };
+        }
+
+        console.error('❌ [TTSEngine] Google TTS API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+
+        // הודעת שגיאה ידידותית למשתמש
+        if (response.status === 500) {
+          console.error('💡 [TTSEngine] הבעיה היא בשרת - בדוק את משתני הסביבה ב-Vercel');
+        } else if (response.status === 403) {
+          console.error('💡 [TTSEngine] אין הרשאה - בדוק את ה-credentials ב-Google Cloud');
+        }
+
         return false;
       }
 
       const data = await response.json();
 
       if (!data.success || !data.audio) {
-        console.error('❌ [TTSEngine] Google TTS החזיר תשובה לא תקינה');
+        console.error('❌ [TTSEngine] Google TTS החזיר תשובה לא תקינה:', data);
         return false;
       }
+
+      console.log('✅ [TTSEngine] קיבלתי אודיו מ-Google TTS');
 
       // המר base64 ל-blob
       const audioBlob = this._base64ToBlob(data.audio, 'audio/mp3');
@@ -138,6 +160,13 @@ export class TTSEngine {
       return true;
     } catch (error) {
       console.error('❌ [TTSEngine] Google TTS exception:', error);
+      console.error('💡 [TTSEngine] סוג השגיאה:', error.name);
+      console.error('💡 [TTSEngine] הודעת השגיאה:', error.message);
+
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        console.error('💡 [TTSEngine] בעיית רשת - האם ה-API endpoint זמין?');
+      }
+
       return false;
     }
   }
@@ -202,6 +231,22 @@ export class TTSEngine {
    * @private
    */
   _speakWithWebSpeech(text) {
+    // בדיקות תקינות
+    if (!this.synth) {
+      console.error('❌ [TTSEngine] Web Speech API לא זמין בדפדפן זה');
+      console.error('💡 [TTSEngine] נסה דפדפן אחר (Chrome/Edge מומלצים)');
+      return;
+    }
+
+    if (!this.voice) {
+      console.error('❌ [TTSEngine] לא נמצא קול מתאים');
+      console.error('💡 [TTSEngine] הקולות הזמינים:', this.synth.getVoices().map(v => v.name));
+      return;
+    }
+
+    console.log('🎤 [TTSEngine] מתחיל הקראה עם Web Speech API');
+    console.log('📢 [TTSEngine] קול:', this.voice.name, '| שפה:', this.voice.lang);
+
     // צור utterance חדש
     this.utterance = new SpeechSynthesisUtterance(text);
     this.utterance.voice = this.voice;
@@ -226,10 +271,39 @@ export class TTSEngine {
 
     this.utterance.onerror = (event) => {
       console.error('❌ [TTSEngine] Web Speech API error:', event.error);
+
+      // הודעות שגיאה ספציפיות
+      switch (event.error) {
+        case 'not-allowed':
+          console.error('💡 [TTSEngine] הדפדפן חסם את ההקראה - ייתכן שצריך אישור מהמשתמש');
+          break;
+        case 'network':
+          console.error('💡 [TTSEngine] בעיית רשת - בדוק את החיבור לאינטרנט');
+          break;
+        case 'synthesis-failed':
+          console.error('💡 [TTSEngine] הסינתזה נכשלה - נסה טקסט קצר יותר');
+          break;
+        case 'synthesis-unavailable':
+          console.error('💡 [TTSEngine] השירות לא זמין - נסה שוב מאוחר יותר');
+          break;
+        case 'audio-busy':
+          console.error('💡 [TTSEngine] האודיו תפוס - חכה שההקראה הקודמת תסתיים');
+          break;
+        case 'canceled':
+          console.error('💡 [TTSEngine] ההקראה בוטלה');
+          break;
+        default:
+          console.error('💡 [TTSEngine] שגיאה לא מוכרת:', event.error);
+      }
     };
 
     // התחל הקראה
-    this.synth.speak(this.utterance);
+    try {
+      this.synth.speak(this.utterance);
+      console.log('▶️ [TTSEngine] ההקראה התחילה');
+    } catch (error) {
+      console.error('❌ [TTSEngine] נכשל להתחיל הקראה:', error);
+    }
   }
 
   /**
