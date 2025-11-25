@@ -143,3 +143,92 @@ export async function updateCourse(courseId, updates) {
     throw error;
   }
 }
+
+/**
+ * מיגרציה של קורסים מ-localStorage ל-Firestore
+ * @param {string} userId - מזהה המשתמש הנוכחי
+ * @returns {Promise<{migrated: number, errors: number, message: string}>}
+ */
+export async function migrateLocalStorageCourses(userId) {
+  try {
+    console.log('🔄 Starting localStorage to Firestore migration for user:', userId);
+
+    // בדוק אם המיגרציה כבר בוצעה
+    const migrationKey = `migration_completed_${userId}`;
+    const migrationCompleted = localStorage.getItem(migrationKey);
+
+    if (migrationCompleted === 'true') {
+      console.log('✅ Migration already completed for this user');
+      return {
+        migrated: 0,
+        errors: 0,
+        message: 'המיגרציה כבר בוצעה בעבר'
+      };
+    }
+
+    // קרא קורסים מ-localStorage
+    const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
+
+    if (storedCourses.length === 0) {
+      console.log('ℹ️ No courses found in localStorage');
+      // סמן שהמיגרציה בוצעה (אפילו אם לא היו קורסים)
+      localStorage.setItem(migrationKey, 'true');
+      return {
+        migrated: 0,
+        errors: 0,
+        message: 'לא נמצאו קורסים למיגרציה'
+      };
+    }
+
+    console.log(`📦 Found ${storedCourses.length} courses in localStorage`);
+
+    let migratedCount = 0;
+    let errorCount = 0;
+    const errors = [];
+
+    // העבר כל קורס ל-Firestore
+    for (const course of storedCourses) {
+      try {
+        console.log(`📝 Migrating course: ${course.title} (ID: ${course.id})`);
+
+        // שמור את הקורס ב-Firestore עם ה-userId הנוכחי
+        await saveCourse(userId, course);
+        migratedCount++;
+
+        console.log(`✅ Successfully migrated: ${course.title}`);
+      } catch (error) {
+        console.error(`❌ Failed to migrate course ${course.id}:`, error);
+        errorCount++;
+        errors.push({
+          courseId: course.id,
+          title: course.title,
+          error: error.message
+        });
+      }
+    }
+
+    // סמן שהמיגרציה הושלמה
+    localStorage.setItem(migrationKey, 'true');
+
+    // רשום את הקורסים שנכשלו
+    if (errors.length > 0) {
+      console.error('❌ Migration errors:', errors);
+    }
+
+    const message = errorCount === 0
+      ? `הועברו בהצלחה ${migratedCount} קורסים מהאחסון המקומי ל-Firestore`
+      : `הועברו ${migratedCount} קורסים, ${errorCount} נכשלו`;
+
+    console.log('🎉 Migration completed:', message);
+
+    return {
+      migrated: migratedCount,
+      errors: errorCount,
+      message,
+      errorDetails: errors
+    };
+  } catch (error) {
+    console.error('❌ Critical error during migration:', error);
+    throw error;
+  }
+}

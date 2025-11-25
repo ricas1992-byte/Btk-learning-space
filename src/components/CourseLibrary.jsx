@@ -6,7 +6,7 @@ import { getCourses, deleteCourse } from '../services/courseService';
  * CourseLibrary - ספריית קורסים
  */
 export default function CourseLibrary({ onSelectCourse }) {
-  const { user } = useAuth();
+  const { user, migrationMessage } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -143,6 +143,19 @@ export default function CourseLibrary({ onSelectCourse }) {
         <span>📚</span>
         <span>ספריית הקורסים</span>
       </h1>
+
+      {/* הודעת מיגרציה */}
+      {migrationMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700 mb-6 flex items-center gap-3">
+          <span className="text-2xl">✅</span>
+          <div>
+            <p className="font-semibold">{migrationMessage}</p>
+            <p className="text-sm text-green-600 mt-1">
+              הקורסים שלך כעת מאוחסנים ב-Firestore ויהיו זמינים מכל מכשיר
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map((course) => (
