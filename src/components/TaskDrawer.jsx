@@ -123,155 +123,150 @@ function TaskDrawer() {
         )}
       </button>
 
-      {/* רקע כהה */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-30 z-40 transition-opacity duration-300"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      {/* מגירה */}
+      {/* מגירה fullscreen */}
       <div
-        className={`fixed top-0 left-0 h-full bg-white shadow-2xl z-50 transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        } w-[380px] sm:w-[420px] flex flex-col`}
+        className={`fixed inset-0 bg-white z-50 transition-opacity duration-300 ease-in-out ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        } flex flex-col overflow-y-auto`}
       >
-        {/* כותרת */}
-        <div className="bg-btk-navy text-white p-5 flex items-center justify-between">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <span>✓</span>
-            <span>המשימות שלי</span>
-          </h2>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="text-white hover:text-btk-gold transition text-2xl leading-none"
-            aria-label="סגור"
-          >
-            ×
-          </button>
-        </div>
+        {/* Container ממורכז */}
+        <div className="w-full max-w-3xl mx-auto flex flex-col min-h-full">
+          {/* כותרת */}
+          <div className="bg-btk-navy text-white p-5 flex items-center justify-between sticky top-0 z-10">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <span>✓</span>
+              <span>המשימות שלי</span>
+            </h2>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-white hover:text-btk-gold transition text-2xl leading-none"
+              aria-label="סגור"
+            >
+              ×
+            </button>
+          </div>
 
-        {/* טופס הוספת משימה */}
-        <div className="p-5 border-b border-btk-light-gray">
-          <form onSubmit={handleAddTask} className="space-y-3">
-            <input
-              type="text"
-              value={newTaskText}
-              onChange={(e) => setNewTaskText(e.target.value)}
-              placeholder="הוסף משימה חדשה..."
-              className="w-full px-4 py-3 border border-btk-light-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-btk-gold text-btk-dark-gray"
-              maxLength={200}
-            />
-
-            <div className="flex gap-2">
+          {/* טופס הוספת משימה */}
+          <div className="p-5 border-b border-btk-light-gray">
+            <form onSubmit={handleAddTask} className="space-y-3">
               <input
-                type="date"
-                value={newTaskDate}
-                onChange={(e) => setNewTaskDate(e.target.value)}
-                className="flex-1 px-4 py-2 border border-btk-light-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-btk-gold text-btk-dark-gray text-sm"
-                dir="ltr"
+                type="text"
+                value={newTaskText}
+                onChange={(e) => setNewTaskText(e.target.value)}
+                placeholder="הוסף משימה חדשה..."
+                className="w-full px-4 py-3 border border-btk-light-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-btk-gold text-btk-dark-gray"
+                maxLength={200}
               />
-              <button
-                type="submit"
-                disabled={!newTaskText.trim()}
-                className="bg-btk-gold hover:bg-btk-bronze text-btk-navy font-bold px-6 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                הוסף
-              </button>
-            </div>
-          </form>
-        </div>
 
-        {/* רשימת משימות */}
-        <div className="flex-1 overflow-y-auto p-5">
-          {tasks.length === 0 ? (
-            <div className="text-center text-btk-dark-gray py-12">
-              <span className="text-5xl mb-3 block opacity-30">✓</span>
-              <p className="text-lg">אין משימות עדיין</p>
-              <p className="text-sm mt-2 opacity-70">הוסף משימה ראשונה כדי להתחיל</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {tasks.map((task) => (
-                <div
-                  key={task.id}
-                  className={`bg-white border-2 rounded-lg p-4 transition-all ${
-                    task.completed
-                      ? 'border-btk-light-gray bg-gray-50'
-                      : 'border-btk-gold hover:shadow-md'
-                  }`}
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={newTaskDate}
+                  onChange={(e) => setNewTaskDate(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-btk-light-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-btk-gold text-btk-dark-gray text-sm"
+                  dir="ltr"
+                />
+                <button
+                  type="submit"
+                  disabled={!newTaskText.trim()}
+                  className="bg-btk-gold hover:bg-btk-bronze text-btk-navy font-bold px-6 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <div className="flex items-start gap-3">
-                    {/* Checkbox */}
-                    <button
-                      onClick={() => handleToggleTask(task.id)}
-                      className="mt-1 flex-shrink-0"
-                      aria-label={task.completed ? 'סמן כלא בוצעה' : 'סמן כבוצעה'}
-                    >
-                      <div
-                        className={`w-5 h-5 border-2 rounded flex items-center justify-center transition ${
-                          task.completed
-                            ? 'bg-btk-gold border-btk-gold'
-                            : 'border-btk-dark-gray hover:border-btk-gold'
-                        }`}
-                      >
-                        {task.completed && (
-                          <span className="text-btk-navy text-xs font-bold">✓</span>
-                        )}
-                      </div>
-                    </button>
+                  הוסף
+                </button>
+              </div>
+            </form>
+          </div>
 
-                    {/* תוכן המשימה */}
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-btk-dark-gray break-words ${
-                          task.completed ? 'line-through opacity-60' : ''
-                        }`}
+          {/* רשימת משימות */}
+          <div className="flex-1 overflow-y-auto p-5">
+            {tasks.length === 0 ? (
+              <div className="text-center text-btk-dark-gray py-12">
+                <span className="text-5xl mb-3 block opacity-30">✓</span>
+                <p className="text-lg">אין משימות עדיין</p>
+                <p className="text-sm mt-2 opacity-70">הוסף משימה ראשונה כדי להתחיל</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className={`bg-white border-2 rounded-lg p-4 transition-all ${
+                      task.completed
+                        ? 'border-btk-light-gray bg-gray-50'
+                        : 'border-btk-gold hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Checkbox */}
+                      <button
+                        onClick={() => handleToggleTask(task.id)}
+                        className="mt-1 flex-shrink-0"
+                        aria-label={task.completed ? 'סמן כלא בוצעה' : 'סמן כבוצעה'}
                       >
-                        {task.text}
-                      </p>
-
-                      {task.dueDate && (
                         <div
-                          className={`text-xs mt-2 inline-block px-2 py-1 rounded ${
+                          className={`w-5 h-5 border-2 rounded flex items-center justify-center transition ${
                             task.completed
-                              ? 'bg-gray-200 text-gray-500'
-                              : isOverdue(task.dueDate)
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-blue-100 text-blue-700'
+                              ? 'bg-btk-gold border-btk-gold'
+                              : 'border-btk-dark-gray hover:border-btk-gold'
                           }`}
                         >
-                          📅 {formatDate(task.dueDate)}
+                          {task.completed && (
+                            <span className="text-btk-navy text-xs font-bold">✓</span>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </button>
 
-                    {/* כפתור מחיקה */}
-                    <button
-                      onClick={() => handleDeleteTask(task.id)}
-                      className="flex-shrink-0 text-btk-dark-gray hover:text-red-600 transition text-lg"
-                      aria-label="מחק משימה"
-                    >
-                      🗑
-                    </button>
+                      {/* תוכן המשימה */}
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-btk-dark-gray break-words ${
+                            task.completed ? 'line-through opacity-60' : ''
+                          }`}
+                        >
+                          {task.text}
+                        </p>
+
+                        {task.dueDate && (
+                          <div
+                            className={`text-xs mt-2 inline-block px-2 py-1 rounded ${
+                              task.completed
+                                ? 'bg-gray-200 text-gray-500'
+                                : isOverdue(task.dueDate)
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-blue-100 text-blue-700'
+                            }`}
+                          >
+                            📅 {formatDate(task.dueDate)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* כפתור מחיקה */}
+                      <button
+                        onClick={() => handleDeleteTask(task.id)}
+                        className="flex-shrink-0 text-btk-dark-gray hover:text-red-600 transition text-lg"
+                        aria-label="מחק משימה"
+                      >
+                        🗑
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* סטטיסטיקות */}
+          {tasks.length > 0 && (
+            <div className="border-t border-btk-light-gray p-4 bg-btk-light-gray mt-auto">
+              <div className="flex justify-between text-sm text-btk-dark-gray">
+                <span>סה"כ משימות: <strong>{tasks.length}</strong></span>
+                <span>פעילות: <strong>{activeTasks}</strong></span>
+                <span>הושלמו: <strong>{tasks.length - activeTasks}</strong></span>
+              </div>
             </div>
           )}
         </div>
-
-        {/* סטטיסטיקות */}
-        {tasks.length > 0 && (
-          <div className="border-t border-btk-light-gray p-4 bg-btk-light-gray">
-            <div className="flex justify-between text-sm text-btk-dark-gray">
-              <span>סה"כ משימות: <strong>{tasks.length}</strong></span>
-              <span>פעילות: <strong>{activeTasks}</strong></span>
-              <span>הושלמו: <strong>{tasks.length - activeTasks}</strong></span>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );
