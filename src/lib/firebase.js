@@ -31,6 +31,15 @@ setPersistence(auth, browserLocalPersistence)
 // Initialize Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();
 
+// הגדר פרמטרים מותאמים אישית עבור Google Sign-In
+// prompt: 'select_account' - מכריח את המשתמש לבחור חשבון בכל פעם
+// (פותר בעיות של "כלום לא קורה" כשלוחצים על הכפתור)
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
+console.log('[Firebase] Google Auth Provider configured with custom parameters');
+
 // Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
 
