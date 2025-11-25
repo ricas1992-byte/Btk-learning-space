@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { getCourse } from '../services/courseService';
+import { useAuth } from '../contexts/AuthContext';
 
 /**
  * CourseView - תצוגת קורס ויחידות הלימוד
@@ -7,6 +9,7 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { user } = useAuth();
 
   useEffect(() => {
     loadCourse();
@@ -15,22 +18,33 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
   const loadCourse = async () => {
     try {
       setLoading(true);
+      setError('');
 
-      // קרא קורסים מ-localStorage
-      const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
+      console.log('📖 CourseView: Loading course:', courseId);
 
-      // חפש את הקורס לפי ID
-      const foundCourse = storedCourses.find(c => c.id === courseId);
+      if (!user) {
+        throw new Error('משתמש לא מחובר');
+      }
+
+      // טען קורס מ-Firestore
+      const foundCourse = await getCourse(courseId);
 
       if (!foundCourse) {
         throw new Error('הקורס לא נמצא');
       }
 
+      // ודא שהקורס שייך למשתמש המחובר
+      if (foundCourse.userId !== user.uid) {
+        console.error('⚠️ Course does not belong to current user');
+        throw new Error('הקורס לא שייך למשתמש הנוכחי');
+      }
+
+      console.log('✅ Course loaded successfully:', foundCourse.title);
       setCourse(foundCourse);
       setError('');
     } catch (err) {
-      console.error('Error loading course:', err);
-      setError('אירעה שגיאה בטעינת הקורס');
+      console.error('❌ Error loading course:', err);
+      setError(err.message || 'אירעה שגיאה בטעינת הקורס');
     } finally {
       setLoading(false);
     }

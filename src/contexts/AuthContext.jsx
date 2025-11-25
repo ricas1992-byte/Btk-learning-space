@@ -6,6 +6,7 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+import { migrateLocalStorageCourses } from '../services/courseService';
 
 const AuthContext = createContext({});
 
@@ -21,14 +22,37 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [migrationMessage, setMigrationMessage] = useState(null);
 
   useEffect(() => {
     console.log('[AuthContext] Setting up auth state listener');
 
     // הגדר מאזין לשינויים בסטטוס ההתחברות
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log('[AuthContext] Auth state changed:', user?.email || 'null');
       setUser(user);
+
+      // אם משתמש התחבר, נסה להריץ מיגרציה
+      if (user) {
+        try {
+          console.log('[AuthContext] Running migration for user:', user.uid);
+          const result = await migrateLocalStorageCourses(user.uid);
+
+          if (result.migrated > 0) {
+            console.log('[AuthContext] Migration successful:', result.message);
+            setMigrationMessage(result.message);
+
+            // הסר את ההודעה אחרי 5 שניות
+            setTimeout(() => {
+              setMigrationMessage(null);
+            }, 5000);
+          }
+        } catch (migrationError) {
+          console.error('[AuthContext] Migration failed:', migrationError);
+          // אל תמנע את ההתחברות בגלל שגיאת מיגרציה
+        }
+      }
+
       setLoading(false);
     });
 
@@ -87,6 +111,7 @@ export function AuthProvider({ children }) {
     user,
     loading,
     error,
+    migrationMessage,
     signIn,
     signUp,
     signOut,
