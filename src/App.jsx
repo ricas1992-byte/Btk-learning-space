@@ -101,10 +101,17 @@ function App() {
   // טיפול בהתחברות
   const handleSignIn = async () => {
     try {
-      console.log('[App] handleSignIn called');
+      console.log('[App] 🔐 handleSignIn called - initiating Google sign-in...');
+      console.log('[App] signInWithGoogle function:', signInWithGoogle);
       await signInWithGoogle();
+      console.log('[App] ✅ signInWithGoogle returned (redirect should have started)');
     } catch (error) {
-      console.error('[App] Error during sign in:', error);
+      console.error('[App] ❌ Error during sign in:', error);
+      console.error('[App] Error details:', {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      });
       alert('שגיאה בהתחברות. אנא נסה שנית.');
     }
   };

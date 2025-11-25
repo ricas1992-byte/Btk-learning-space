@@ -103,13 +103,21 @@ export function AuthProvider({ children }) {
   // התחברות עם Google
   const signInWithGoogle = async () => {
     try {
-      console.log('[AuthContext] signInWithGoogle called - redirecting to Google...');
+      console.log('[AuthContext] 🚀 signInWithGoogle called - starting redirect process...');
+      console.log('[AuthContext] Auth object:', auth);
+      console.log('[AuthContext] Google Provider:', googleProvider);
       setError(null);
+
+      console.log('[AuthContext] ⏳ Calling signInWithRedirect...');
       await signInWithRedirect(auth, googleProvider);
+      console.log('[AuthContext] ✅ signInWithRedirect completed - browser should redirect now');
       // הפונקציה לא תחזיר דבר כי הדפדפן יעבור לגוגל
       // התוצאה תטופל ב-useEffect עם getRedirectResult
     } catch (error) {
-      console.error('[AuthContext] Error signing in with Google:', error);
+      console.error('[AuthContext] ❌ Error signing in with Google:', error);
+      console.error('[AuthContext] Error code:', error.code);
+      console.error('[AuthContext] Error message:', error.message);
+      console.error('[AuthContext] Full error object:', error);
       setError(error.message);
       throw error;
     }
