@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import {
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
   onAuthStateChanged
 } from 'firebase/auth';
@@ -22,6 +23,19 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // בדיקת תוצאה מ-redirect (כשהמשתמש חוזר מגוגל)
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // המשתמש התחבר בהצלחה
+          setUser(result.user);
+        }
+      })
+      .catch((error) => {
+        console.error('Error getting redirect result:', error);
+        setError(error.message);
+      });
+
     // מאזין לשינויים בסטטוס ההתחברות
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
@@ -36,8 +50,9 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = async () => {
     try {
       setError(null);
-      const result = await signInWithPopup(auth, googleProvider);
-      return result.user;
+      await signInWithRedirect(auth, googleProvider);
+      // הפונקציה לא תחזיר דבר כי הדפדפן יעבור לגוגל
+      // התוצאה תטופל ב-useEffect עם getRedirectResult
     } catch (error) {
       console.error('Error signing in with Google:', error);
       setError(error.message);
