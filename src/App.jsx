@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { TTSEngine } from './utils/ttsEngine';
+import { useAuth } from './contexts/AuthContext';
+import { getCourse } from './services/courseService';
 import UploadForm from './components/UploadForm';
 import CourseLibrary from './components/CourseLibrary';
 import CourseView from './components/CourseView';
@@ -9,6 +11,9 @@ import LessonPlayer from './components/LessonPlayer';
  * App - הקומפוננט הראשי של האפליקציה
  */
 function App() {
+  // Authentication
+  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
+
   // מצבי ניווט
   const [currentView, setCurrentView] = useState('library'); // 'library', 'upload', 'course', 'lesson'
   const [selectedCourseId, setSelectedCourseId] = useState(null);
@@ -45,22 +50,23 @@ function App() {
     setCurrentView('upload');
   };
 
-  const navigateToCourse = (courseId) => {
+  const navigateToCourse = async (courseId) => {
     setSelectedCourseId(courseId);
 
-    // טען נתוני קורס מ-localStorage
+    // טען נתוני קורס מ-Firestore
     try {
-      const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
-      const courseData = storedCourses.find(c => c.id === courseId);
+      const courseData = await getCourse(courseId);
 
       if (courseData) {
         setSelectedCourse(courseData);
         setCurrentView('course');
       } else {
         console.error('Course not found:', courseId);
+        alert('לא נמצא קורס זה');
       }
     } catch (error) {
       console.error('Error loading course:', error);
+      alert('שגיאה בטעינת הקורס');
     }
   };
 
@@ -73,6 +79,66 @@ function App() {
     // לאחר העלאה מוצלחת, חזור לספרייה
     navigateToLibrary();
   };
+
+  // טיפול בהתחברות
+  const handleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('Error during sign in:', error);
+      alert('שגיאה בהתחברות. אנא נסה שנית.');
+    }
+  };
+
+  // טיפול בהתנתקות
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigateToLibrary();
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      alert('שגיאה בהתנתקות. אנא נסה שנית.');
+    }
+  };
+
+  // אם עדיין טוען את סטטוס ההתחברות
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4"></div>
+          <p className="text-btk-dark-gray">טוען...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // אם המשתמש לא מחובר
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="max-w-md mx-auto p-6 text-center">
+          <span className="text-6xl mb-4 block">📚</span>
+          <h1 className="text-3xl font-bold text-btk-navy mb-4">
+            מרחב הלמידה
+          </h1>
+          <p className="text-btk-dark-gray mb-6">
+            מערכת ספריית למידה עם הקראה אוטומטית
+          </p>
+          <p className="text-btk-dark-gray mb-6">
+            התחבר כדי להתחיל ללמוד ולסנכרן את הקורסים שלך בין מכשירים
+          </p>
+          <button
+            onClick={handleSignIn}
+            className="bg-btk-gold hover:bg-btk-bronze text-btk-navy font-bold py-3 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-3 mx-auto"
+          >
+            <span>🔐</span>
+            <span>התחבר עם Google</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -92,7 +158,7 @@ function App() {
             </div>
 
             {/* תפריט */}
-            <nav className="flex gap-4">
+            <nav className="flex items-center gap-4">
               <button
                 onClick={navigateToLibrary}
                 className={`px-4 py-2 rounded-lg font-medium transition ${
@@ -113,6 +179,27 @@ function App() {
               >
                 העלאת קורס
               </button>
+
+              {/* מידע משתמש */}
+              <div className="flex items-center gap-3 border-r border-btk-light-gray pr-4">
+                {user.photoURL && (
+                  <img
+                    src={user.photoURL}
+                    alt={user.displayName}
+                    className="w-8 h-8 rounded-full"
+                  />
+                )}
+                <span className="text-sm text-btk-dark-gray">
+                  {user.displayName || user.email}
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  className="text-sm text-btk-dark-gray hover:text-btk-navy transition"
+                  title="התנתק"
+                >
+                  יציאה
+                </button>
+              </div>
             </nav>
           </div>
         </div>

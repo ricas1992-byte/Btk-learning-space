@@ -1,33 +1,41 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { getCourses, deleteCourse } from '../services/courseService';
 
 /**
  * CourseLibrary - ספריית קורסים
  */
 export default function CourseLibrary({ onSelectCourse }) {
+  const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     loadCourses();
-  }, []);
+  }, [user]);
 
   const loadCourses = async () => {
     try {
       setLoading(true);
 
-      // קרא קורסים מ-localStorage
-      const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
+      if (!user) {
+        setCourses([]);
+        return;
+      }
+
+      // קרא קורסים מ-Firestore
+      const firestoreCourses = await getCourses(user.uid);
 
       // צור אינדקס של הקורסים (רק המידע הבסיסי)
-      const coursesIndex = storedCourses.map(course => ({
+      const coursesIndex = firestoreCourses.map(course => ({
         id: course.id,
         title: course.title,
         description: course.description,
         language: course.language,
         tags: course.tags,
         createdAt: course.createdAt,
-        lessonCount: course.lessons.length,
+        lessonCount: course.lessons ? course.lessons.length : 0,
       }));
 
       setCourses(coursesIndex);
@@ -45,7 +53,7 @@ export default function CourseLibrary({ onSelectCourse }) {
     return date.toLocaleDateString('he-IL');
   };
 
-  const handleDelete = (courseId) => {
+  const handleDelete = async (courseId) => {
     const course = courses.find(c => c.id === courseId);
 
     const confirmed = window.confirm(
@@ -53,18 +61,19 @@ export default function CourseLibrary({ onSelectCourse }) {
     );
 
     if (confirmed) {
-      // קרא את הקורסים המלאים מ-localStorage
-      const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
-      // מחק את הקורס
-      const updatedCourses = storedCourses.filter(c => c.id !== courseId);
-      // עדכן ב-localStorage
-      localStorage.setItem('courses', JSON.stringify(updatedCourses));
+      try {
+        // מחק את הקורס מ-Firestore
+        await deleteCourse(courseId);
 
-      // עדכן את המצב המקומי
-      setCourses(courses.filter(c => c.id !== courseId));
+        // עדכן את המצב המקומי
+        setCourses(courses.filter(c => c.id !== courseId));
 
-      // הודעת הצלחה
-      alert('הקורס נמחק בהצלחה');
+        // הודעת הצלחה
+        alert('הקורס נמחק בהצלחה');
+      } catch (error) {
+        console.error('Error deleting course:', error);
+        alert('שגיאה במחיקת הקורס. אנא נסה שנית.');
+      }
     }
   };
 

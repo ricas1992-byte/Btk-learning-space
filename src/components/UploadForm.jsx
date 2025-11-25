@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { saveCourse } from '../services/courseService';
 
 /**
  * UploadForm - טופס העלאת קורס DOCX
  */
 export default function UploadForm({ onUploadSuccess }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -72,11 +75,14 @@ export default function UploadForm({ onUploadSuccess }) {
 
       const result = await response.json();
 
-      // שמור את הקורס ב-localStorage
+      // שמור את הקורס ב-Firestore
       if (result.success && result.course) {
-        const storedCourses = JSON.parse(localStorage.getItem('courses') || '[]');
-        storedCourses.push(result.course);
-        localStorage.setItem('courses', JSON.stringify(storedCourses));
+        try {
+          await saveCourse(user.uid, result.course);
+        } catch (firestoreError) {
+          console.error('Error saving to Firestore:', firestoreError);
+          // המשך למרות השגיאה - הקורס כבר נשמר בשרת
+        }
       }
 
       setStatus('success');
