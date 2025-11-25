@@ -23,34 +23,81 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log('[AuthContext] useEffect started');
+    console.log('[AuthContext] useEffect started - checking auth state');
+    console.log('[AuthContext] Current auth object:', auth);
+    console.log('[AuthContext] Current user from auth:', auth.currentUser?.email || 'null');
+
+    // בדיקת localStorage ו-sessionStorage לדיבאג
+    console.log('[AuthContext] Checking storage:');
+    try {
+      // Firebase שומר את ה-auth state תחת מפתחות ספציפיים
+      const localStorageKeys = Object.keys(localStorage);
+      console.log('[AuthContext] localStorage keys:', localStorageKeys);
+      const firebaseKeys = localStorageKeys.filter(key => key.includes('firebase'));
+      console.log('[AuthContext] Firebase related keys:', firebaseKeys);
+
+      // הדפס את התוכן של כל מפתח Firebase
+      firebaseKeys.forEach(key => {
+        const value = localStorage.getItem(key);
+        console.log(`[AuthContext] localStorage['${key}']:`, value?.substring(0, 100) + '...');
+      });
+    } catch (e) {
+      console.error('[AuthContext] Error checking localStorage:', e);
+    }
 
     // בדיקת תוצאה מ-redirect (כשהמשתמש חוזר מגוגל)
+    console.log('[AuthContext] Calling getRedirectResult...');
     getRedirectResult(auth)
       .then((result) => {
-        console.log('[AuthContext] getRedirectResult result:', result);
+        console.log('[AuthContext] getRedirectResult completed');
         if (result && result.user) {
-          // המשתמש התחבר בהצלחה
-          console.log('[AuthContext] User signed in successfully:', result.user.email);
+          // המשתמש התחבר בהצלחה דרך redirect
+          console.log('[AuthContext] ✅ User signed in via redirect:', result.user.email);
+          console.log('[AuthContext] User details:', {
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL
+          });
           setUser(result.user);
-          setLoading(false); // חשוב! עדכון loading ל-false
+          setLoading(false);
+        } else {
+          console.log('[AuthContext] No redirect result found (user did not just return from Google)');
+          // אם אין redirect result, נבדק אם יש user קיים דרך onAuthStateChanged
         }
       })
       .catch((error) => {
-        console.error('[AuthContext] Error getting redirect result:', error);
+        console.error('[AuthContext] ❌ Error getting redirect result:', error);
+        console.error('[AuthContext] Error code:', error.code);
+        console.error('[AuthContext] Error message:', error.message);
         setError(error.message);
-        setLoading(false); // גם במקרה של שגיאה, עצור את ה-loading
+        setLoading(false);
       });
 
     // מאזין לשינויים בסטטוס ההתחברות
+    console.log('[AuthContext] Setting up onAuthStateChanged listener...');
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('[AuthContext] onAuthStateChanged triggered, user:', user?.email || 'null');
+      console.log('[AuthContext] 🔔 onAuthStateChanged triggered');
+      if (user) {
+        console.log('[AuthContext] ✅ User is logged in:', user.email);
+        console.log('[AuthContext] User details:', {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL
+        });
+      } else {
+        console.log('[AuthContext] ❌ No user logged in');
+      }
       setUser(user);
       setLoading(false);
     });
 
     // ניקוי המאזין כשהקומפוננט נהרס
-    return unsubscribe;
+    return () => {
+      console.log('[AuthContext] Cleaning up - unsubscribing from onAuthStateChanged');
+      unsubscribe();
+    };
   }, []);
 
   // התחברות עם Google

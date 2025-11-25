@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Firebase configuration
@@ -18,6 +18,15 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase Authentication and get a reference to the service
 export const auth = getAuth(app);
+
+// הגדר persistence מפורש - שומר את ה-auth state גם אחרי סגירת הדפדפן
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log('[Firebase] Auth persistence set to LOCAL - user will stay logged in');
+  })
+  .catch((error) => {
+    console.error('[Firebase] Error setting persistence:', error);
+  });
 
 // Initialize Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();

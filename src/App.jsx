@@ -11,12 +11,25 @@ import LessonPlayer from './components/LessonPlayer';
  * App - הקומפוננט הראשי של האפליקציה
  */
 function App() {
+  console.log('[App] 🚀 App component rendering');
+
   // Authentication
   const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
 
+  console.log('[App] Current state - user:', user?.email || 'null', 'loading:', authLoading);
+
   // לוג למעקב אחרי מצב ההתחברות
   useEffect(() => {
-    console.log('[App] Auth state changed - user:', user?.email || 'null', 'loading:', authLoading);
+    console.log('[App] ⚡ Auth state changed - user:', user?.email || 'null', 'loading:', authLoading);
+    if (user) {
+      console.log('[App] ✅ User is authenticated:', {
+        email: user.email,
+        displayName: user.displayName,
+        uid: user.uid
+      });
+    } else {
+      console.log('[App] ❌ No authenticated user');
+    }
   }, [user, authLoading]);
 
   // מצבי ניווט
