@@ -1,11 +1,11 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import {
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { auth, googleProvider } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 
 const AuthContext = createContext({});
 
@@ -23,93 +23,47 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log('[AuthContext] useEffect started - checking auth state');
-    console.log('[AuthContext] Current auth object:', auth);
-    console.log('[AuthContext] Current user from auth:', auth.currentUser?.email || 'null');
+    console.log('[AuthContext] Setting up auth state listener');
 
-    // משתנה עבור cleanup
-    let unsubscribe;
-
-    // פונקציה אסינכרונית לטיפול ב-redirect ואז ב-auth state
-    const initAuth = async () => {
-      try {
-        // שלב 1: בדוק אם יש redirect result (כשהמשתמש חוזר מגוגל)
-        console.log('[AuthContext] ⏳ Calling getRedirectResult...');
-        const result = await getRedirectResult(auth);
-
-        if (result && result.user) {
-          // המשתמש התחבר בהצלחה דרך redirect
-          console.log('[AuthContext] ✅ User signed in via redirect:', result.user.email);
-          console.log('[AuthContext] User details:', {
-            uid: result.user.uid,
-            email: result.user.email,
-            displayName: result.user.displayName,
-            photoURL: result.user.photoURL
-          });
-          // עדכן את ה-state מיד
-          setUser(result.user);
-          setLoading(false);
-        } else {
-          console.log('[AuthContext] No redirect result found (user did not just return from Google)');
-        }
-      } catch (error) {
-        console.error('[AuthContext] ❌ Error getting redirect result:', error);
-        console.error('[AuthContext] Error code:', error.code);
-        console.error('[AuthContext] Error message:', error.message);
-        setError(error.message);
-      }
-
-      // שלב 2: הגדר מאזין לשינויים בסטטוס ההתחברות
-      // זה ירוץ רק אחרי ש-getRedirectResult סיים
-      console.log('[AuthContext] Setting up onAuthStateChanged listener...');
-      unsubscribe = onAuthStateChanged(auth, (user) => {
-        console.log('[AuthContext] 🔔 onAuthStateChanged triggered');
-        if (user) {
-          console.log('[AuthContext] ✅ User is logged in:', user.email);
-          console.log('[AuthContext] User details:', {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL
-          });
-        } else {
-          console.log('[AuthContext] ❌ No user logged in');
-        }
-        setUser(user);
-        setLoading(false);
-      });
-    };
-
-    // הרץ את האתחול
-    initAuth();
+    // הגדר מאזין לשינויים בסטטוס ההתחברות
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('[AuthContext] Auth state changed:', user?.email || 'null');
+      setUser(user);
+      setLoading(false);
+    });
 
     // ניקוי המאזין כשהקומפוננט נהרס
     return () => {
-      console.log('[AuthContext] Cleaning up - unsubscribing from onAuthStateChanged');
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      console.log('[AuthContext] Cleaning up auth listener');
+      unsubscribe();
     };
   }, []);
 
-  // התחברות עם Google
-  const signInWithGoogle = async () => {
+  // התחברות עם אימייל וסיסמא
+  const signIn = async (email, password) => {
     try {
-      console.log('[AuthContext] 🚀 signInWithGoogle called - starting redirect process...');
-      console.log('[AuthContext] Auth object:', auth);
-      console.log('[AuthContext] Google Provider:', googleProvider);
+      console.log('[AuthContext] Signing in with email:', email);
       setError(null);
-
-      console.log('[AuthContext] ⏳ Calling signInWithRedirect...');
-      await signInWithRedirect(auth, googleProvider);
-      console.log('[AuthContext] ✅ signInWithRedirect completed - browser should redirect now');
-      // הפונקציה לא תחזיר דבר כי הדפדפן יעבור לגוגל
-      // התוצאה תטופל ב-useEffect עם getRedirectResult
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      console.log('[AuthContext] Sign in successful:', result.user.email);
+      return result.user;
     } catch (error) {
-      console.error('[AuthContext] ❌ Error signing in with Google:', error);
-      console.error('[AuthContext] Error code:', error.code);
-      console.error('[AuthContext] Error message:', error.message);
-      console.error('[AuthContext] Full error object:', error);
+      console.error('[AuthContext] Error signing in:', error);
+      setError(error.message);
+      throw error;
+    }
+  };
+
+  // רישום משתמש חדש עם אימייל וסיסמא
+  const signUp = async (email, password) => {
+    try {
+      console.log('[AuthContext] Creating new user with email:', email);
+      setError(null);
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('[AuthContext] User created successfully:', result.user.email);
+      return result.user;
+    } catch (error) {
+      console.error('[AuthContext] Error creating user:', error);
       setError(error.message);
       throw error;
     }
@@ -133,7 +87,8 @@ export function AuthProvider({ children }) {
     user,
     loading,
     error,
-    signInWithGoogle,
+    signIn,
+    signUp,
     signOut,
   };
 
