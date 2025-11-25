@@ -18,14 +18,20 @@ export default function CourseLibrary({ onSelectCourse }) {
   const loadCourses = async () => {
     try {
       setLoading(true);
+      setError('');
 
       if (!user) {
+        console.log('⚠️ No user logged in, clearing courses');
         setCourses([]);
         return;
       }
 
+      console.log('📚 CourseLibrary: Starting to load courses...');
+
       // קרא קורסים מ-Firestore
       const firestoreCourses = await getCourses(user.uid);
+
+      console.log('📚 CourseLibrary: Received courses from Firestore:', firestoreCourses);
 
       // צור אינדקס של הקורסים (רק המידע הבסיסי)
       const coursesIndex = firestoreCourses.map(course => ({
@@ -38,11 +44,28 @@ export default function CourseLibrary({ onSelectCourse }) {
         lessonCount: course.lessons ? course.lessons.length : 0,
       }));
 
+      console.log('📚 CourseLibrary: Processed courses index:', coursesIndex);
+
       setCourses(coursesIndex);
       setError('');
     } catch (err) {
-      console.error('Error loading courses:', err);
-      setError('אירעה שגיאה בטעינת הקורסים');
+      console.error('❌ Error loading courses:', err);
+      console.error('❌ Error code:', err.code);
+      console.error('❌ Error message:', err.message);
+      console.error('❌ Error stack:', err.stack);
+
+      let errorMessage = 'אירעה שגיאה בטעינת הקורסים';
+
+      // הודעות שגיאה ספציפיות
+      if (err.code === 'permission-denied') {
+        errorMessage = 'שגיאת הרשאות Firestore. בדוק את Rules.';
+      } else if (err.code === 'failed-precondition' || err.message?.includes('index')) {
+        errorMessage = 'נדרש אינדקס ב-Firestore. בדוק את הקונסול ליצירת האינדקס.';
+      } else if (err.message) {
+        errorMessage = `שגיאה: ${err.message}`;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
