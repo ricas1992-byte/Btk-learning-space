@@ -14,7 +14,7 @@ function App() {
   console.log('[App] 🚀 App component rendering');
 
   // Authentication
-  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
 
   console.log('[App] Current state - user:', user?.email || 'null', 'loading:', authLoading);
 
@@ -37,6 +37,11 @@ function App() {
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedLessonId, setSelectedLessonId] = useState(null);
+
+  // מצבי טופס התחברות
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
 
   // TTS Engine
   const [ttsEngine] = useState(() => new TTSEngine());
@@ -99,20 +104,69 @@ function App() {
   };
 
   // טיפול בהתחברות
-  const handleSignIn = async () => {
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+
+    if (!email || !password) {
+      setAuthError('נא למלא אימייל וסיסמא');
+      return;
+    }
+
     try {
-      console.log('[App] 🔐 handleSignIn called - initiating Google sign-in...');
-      console.log('[App] signInWithGoogle function:', signInWithGoogle);
-      await signInWithGoogle();
-      console.log('[App] ✅ signInWithGoogle returned (redirect should have started)');
+      console.log('[App] Signing in with email:', email);
+      await signIn(email, password);
+      console.log('[App] Sign in successful');
     } catch (error) {
-      console.error('[App] ❌ Error during sign in:', error);
-      console.error('[App] Error details:', {
-        code: error.code,
-        message: error.message,
-        stack: error.stack
-      });
-      alert('שגיאה בהתחברות. אנא נסה שנית.');
+      console.error('[App] Error during sign in:', error);
+      let errorMessage = 'שגיאה בהתחברות';
+
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+        errorMessage = 'אימייל או סיסמא שגויים';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = 'משתמש לא קיים. אנא הירשם תחילה.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'אימייל לא תקין';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'יותר מדי ניסיונות. אנא נסה שוב מאוחר יותר.';
+      }
+
+      setAuthError(errorMessage);
+    }
+  };
+
+  // טיפול ברישום
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+
+    if (!email || !password) {
+      setAuthError('נא למלא אימייל וסיסמא');
+      return;
+    }
+
+    if (password.length < 6) {
+      setAuthError('הסיסמא חייבת להכיל לפחות 6 תווים');
+      return;
+    }
+
+    try {
+      console.log('[App] Signing up with email:', email);
+      await signUp(email, password);
+      console.log('[App] Sign up successful');
+    } catch (error) {
+      console.error('[App] Error during sign up:', error);
+      let errorMessage = 'שגיאה ברישום';
+
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'האימייל כבר קיים במערכת. אנא התחבר.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'אימייל לא תקין';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'הסיסמא חלשה מדי. השתמש לפחות ב-6 תווים.';
+      }
+
+      setAuthError(errorMessage);
     }
   };
 
@@ -143,24 +197,73 @@ function App() {
   if (!user) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="max-w-md mx-auto p-6 text-center">
-          <span className="text-6xl mb-4 block">📚</span>
-          <h1 className="text-3xl font-bold text-btk-navy mb-4">
-            מרחב הלמידה
-          </h1>
-          <p className="text-btk-dark-gray mb-6">
-            מערכת ספריית למידה עם הקראה אוטומטית
-          </p>
-          <p className="text-btk-dark-gray mb-6">
-            התחבר כדי להתחיל ללמוד ולסנכרן את הקורסים שלך בין מכשירים
-          </p>
-          <button
-            onClick={handleSignIn}
-            className="bg-btk-gold hover:bg-btk-bronze text-btk-navy font-bold py-3 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-3 mx-auto"
-          >
-            <span>🔐</span>
-            <span>התחבר עם Google</span>
-          </button>
+        <div className="max-w-md mx-auto p-6">
+          <div className="text-center mb-6">
+            <span className="text-6xl mb-4 block">📚</span>
+            <h1 className="text-3xl font-bold text-btk-navy mb-4">
+              מרחב הלמידה
+            </h1>
+            <p className="text-btk-dark-gray mb-2">
+              מערכת ספריית למידה עם הקראה אוטומטית
+            </p>
+          </div>
+
+          <form className="bg-white shadow-lg rounded-lg p-6 border border-btk-light-gray">
+            <h2 className="text-xl font-bold text-btk-navy mb-4 text-center">
+              התחברות / רישום
+            </h2>
+
+            {authError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                {authError}
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label htmlFor="email" className="block text-btk-dark-gray font-medium mb-2">
+                אימייל
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2 border border-btk-light-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-btk-gold"
+                placeholder="your@email.com"
+                dir="ltr"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="password" className="block text-btk-dark-gray font-medium mb-2">
+                סיסמא
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-btk-light-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-btk-gold"
+                placeholder="לפחות 6 תווים"
+                dir="ltr"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleSignIn}
+                className="flex-1 bg-btk-gold hover:bg-btk-bronze text-btk-navy font-bold py-3 px-6 rounded-lg transition shadow-md"
+              >
+                התחבר
+              </button>
+              <button
+                onClick={handleSignUp}
+                className="flex-1 bg-btk-navy hover:bg-btk-dark-gray text-white font-bold py-3 px-6 rounded-lg transition shadow-md"
+              >
+                הירשם
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     );
