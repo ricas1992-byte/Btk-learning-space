@@ -23,11 +23,17 @@ export async function saveCourse(userId, courseData) {
     // יצירת מסמך עם ה-ID של הקורס
     const courseRef = doc(db, 'courses', courseData.id);
 
+    // בדוק אם הקורס כבר קיים
+    const existingCourse = await getDoc(courseRef);
+    const isNewCourse = !existingCourse.exists();
+
     // הוספת מידע נוסף
     const courseToSave = {
       ...courseData,
       userId,
       updatedAt: serverTimestamp(),
+      // הוסף createdAt רק אם זה קורס חדש
+      ...(isNewCourse && { createdAt: serverTimestamp() })
     };
 
     await setDoc(courseRef, courseToSave);
@@ -47,20 +53,45 @@ export async function saveCourse(userId, courseData) {
 export async function getCourses(userId) {
   try {
     const coursesRef = collection(db, 'courses');
-    const q = query(
-      coursesRef,
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
-    );
 
-    const querySnapshot = await getDocs(q);
+    // נסה תחילה עם orderBy - אם יש index זה יעבוד
+    let q;
+    let querySnapshot;
+
+    try {
+      q = query(
+        coursesRef,
+        where('userId', '==', userId),
+        orderBy('updatedAt', 'desc')
+      );
+      querySnapshot = await getDocs(q);
+    } catch (indexError) {
+      // אם אין index, פשוט קח את כל הקורסים של המשתמש בלי מיון
+      console.log('No index found, fetching without orderBy:', indexError.message);
+      q = query(
+        coursesRef,
+        where('userId', '==', userId)
+      );
+      querySnapshot = await getDocs(q);
+    }
+
     const courses = [];
 
     querySnapshot.forEach((doc) => {
+      const data = doc.data();
       courses.push({
         id: doc.id,
-        ...doc.data()
+        ...data,
+        // וודא שיש createdAt - אם לא, השתמש ב-updatedAt או תאריך נוכחי
+        createdAt: data.createdAt || data.updatedAt || new Date().toISOString()
       });
+    });
+
+    // מיין את הקורסים בזיכרון לפי תאריך עדכון
+    courses.sort((a, b) => {
+      const dateA = a.updatedAt?.toMillis?.() || new Date(a.updatedAt || a.createdAt).getTime();
+      const dateB = b.updatedAt?.toMillis?.() || new Date(b.updatedAt || b.createdAt).getTime();
+      return dateB - dateA; // מהחדש לישן
     });
 
     return courses;
