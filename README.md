@@ -32,7 +32,34 @@ cd btk-learning-space
 npm install
 ```
 
-### 3. הרץ בסביבת פיתוח
+### 3. הגדר משתני סביבה
+
+צור קובץ `.env` בשורש הפרויקט והעתק את התוכן מ-`.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+ערוך את הקובץ `.env` והזן את ערכי Firebase שלך:
+
+```env
+VITE_FIREBASE_API_KEY=your-api-key-here
+VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project-id.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+VITE_FIREBASE_MEASUREMENT_ID=your-measurement-id
+```
+
+**איך למצוא את הערכים:**
+1. היכנס ל-[Firebase Console](https://console.firebase.google.com/)
+2. בחר את הפרויקט שלך (או צור חדש)
+3. לך ל-**Project Settings** > **General**
+4. גלול ל-**Your apps** > בחר באפליקציית Web
+5. העתק את הערכים מ-**Firebase SDK snippet** > **Config**
+
+### 4. הרץ בסביבת פיתוח
 
 ```bash
 npm run dev
@@ -54,7 +81,13 @@ npm run build
 2. לחץ על **"Add New Project"**
 3. בחר את ה-repository שלך מ-GitHub
 4. Vercel יזהה אוטומטית את הגדרות Vite
-5. לחץ על **"Deploy"**
+5. **לפני Deploy** - הוסף את משתני הסביבה:
+   - לך ל-**Environment Variables**
+   - הוסף את כל המשתנים מקובץ `.env.example`
+   - העתק את הערכים האמיתיים מ-Firebase Console
+6. לחץ על **"Deploy"**
+
+**חשוב:** אחרי כל שינוי במשתני הסביבה ב-Vercel, חובה לעשות Redeploy!
 
 ### אופציה 2: דרך CLI
 
