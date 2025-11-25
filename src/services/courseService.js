@@ -27,6 +27,7 @@ export async function saveCourse(userId, courseData) {
     const courseToSave = {
       ...courseData,
       userId,
+      createdAt: courseData.createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
 
@@ -35,6 +36,8 @@ export async function saveCourse(userId, courseData) {
     return courseData.id;
   } catch (error) {
     console.error('Error saving course:', error);
+    console.error('Course data:', courseData);
+    console.error('User ID:', userId);
     throw error;
   }
 }
@@ -46,6 +49,8 @@ export async function saveCourse(userId, courseData) {
  */
 export async function getCourses(userId) {
   try {
+    console.log('🔍 Loading courses for user:', userId);
+
     const coursesRef = collection(db, 'courses');
     const q = query(
       coursesRef,
@@ -53,6 +58,7 @@ export async function getCourses(userId) {
       orderBy('createdAt', 'desc')
     );
 
+    console.log('🔍 Executing Firestore query...');
     const querySnapshot = await getDocs(q);
     const courses = [];
 
@@ -63,9 +69,19 @@ export async function getCourses(userId) {
       });
     });
 
+    console.log(`✅ Successfully loaded ${courses.length} courses`);
     return courses;
   } catch (error) {
-    console.error('Error getting courses:', error);
+    console.error('❌ Error getting courses:', error);
+    console.error('Error code:', error.code);
+    console.error('Error message:', error.message);
+    console.error('User ID:', userId);
+
+    // אם השגיאה היא בגלל חוסר אינדקס, תן הודעה ברורה
+    if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+      console.error('🔧 Firestore index required. Check the error message for the index creation link.');
+    }
+
     throw error;
   }
 }
