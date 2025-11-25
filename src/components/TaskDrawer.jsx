@@ -125,21 +125,22 @@ function TaskDrawer() {
 
       {/* מגירה fullscreen */}
       <div
-        className={`fixed inset-0 bg-white z-50 transition-opacity duration-300 ease-in-out ${
+        className={`fixed inset-0 w-screen h-screen bg-white z-[1000] transition-opacity duration-300 ease-in-out ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        } flex flex-col overflow-y-auto`}
+        } flex flex-col overflow-hidden`}
+        style={{ top: 0, right: 0, bottom: 0, left: 0 }}
       >
-        {/* Container ממורכז */}
-        <div className="w-full max-w-3xl mx-auto flex flex-col min-h-full">
+        {/* Container ממורכז עם padding מובייל */}
+        <div className="w-full max-w-3xl mx-auto flex flex-col h-full overflow-y-auto px-4 sm:px-6">
           {/* כותרת */}
-          <div className="bg-btk-navy text-white p-5 flex items-center justify-between sticky top-0 z-10">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <span>✓</span>
-              <span>המשימות שלי</span>
+          <div className="bg-btk-navy text-white p-4 sm:p-5 flex items-center justify-between sticky top-0 z-10 -mx-4 sm:-mx-6">
+            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2 truncate flex-1 ml-2">
+              <span className="flex-shrink-0">✓</span>
+              <span className="truncate">המשימות שלי</span>
             </h2>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-white hover:text-btk-gold transition text-2xl leading-none"
+              className="text-white hover:text-btk-gold transition text-2xl leading-none flex-shrink-0"
               aria-label="סגור"
             >
               ×
@@ -147,29 +148,29 @@ function TaskDrawer() {
           </div>
 
           {/* טופס הוספת משימה */}
-          <div className="p-5 border-b border-btk-light-gray">
-            <form onSubmit={handleAddTask} className="space-y-3">
+          <div className="p-4 sm:p-5 border-b border-btk-light-gray -mx-4 sm:-mx-6">
+            <form onSubmit={handleAddTask} className="space-y-3 max-w-full">
               <input
                 type="text"
                 value={newTaskText}
                 onChange={(e) => setNewTaskText(e.target.value)}
                 placeholder="הוסף משימה חדשה..."
-                className="w-full px-4 py-3 border border-btk-light-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-btk-gold text-btk-dark-gray"
+                className="w-full max-w-full px-4 py-3 border border-btk-light-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-btk-gold text-btk-dark-gray box-border"
                 maxLength={200}
               />
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 max-w-full">
                 <input
                   type="date"
                   value={newTaskDate}
                   onChange={(e) => setNewTaskDate(e.target.value)}
-                  className="flex-1 px-4 py-2 border border-btk-light-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-btk-gold text-btk-dark-gray text-sm"
+                  className="flex-1 min-w-0 px-3 sm:px-4 py-2 border border-btk-light-gray rounded-lg focus:outline-none focus:ring-2 focus:ring-btk-gold text-btk-dark-gray text-sm box-border"
                   dir="ltr"
                 />
                 <button
                   type="submit"
                   disabled={!newTaskText.trim()}
-                  className="bg-btk-gold hover:bg-btk-bronze text-btk-navy font-bold px-6 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-btk-gold hover:bg-btk-bronze text-btk-navy font-bold px-4 sm:px-6 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 box-border"
                 >
                   הוסף
                 </button>
@@ -178,7 +179,7 @@ function TaskDrawer() {
           </div>
 
           {/* רשימת משימות */}
-          <div className="flex-1 overflow-y-auto p-5">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5">
             {tasks.length === 0 ? (
               <div className="text-center text-btk-dark-gray py-12">
                 <span className="text-5xl mb-3 block opacity-30">✓</span>
@@ -186,17 +187,17 @@ function TaskDrawer() {
                 <p className="text-sm mt-2 opacity-70">הוסף משימה ראשונה כדי להתחיל</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 max-w-full">
                 {tasks.map((task) => (
                   <div
                     key={task.id}
-                    className={`bg-white border-2 rounded-lg p-4 transition-all ${
+                    className={`bg-white border-2 rounded-lg p-3 sm:p-4 transition-all max-w-full box-border ${
                       task.completed
                         ? 'border-btk-light-gray bg-gray-50'
                         : 'border-btk-gold hover:shadow-md'
                     }`}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-2 sm:gap-3 max-w-full">
                       {/* Checkbox */}
                       <button
                         onClick={() => handleToggleTask(task.id)}
@@ -217,9 +218,9 @@ function TaskDrawer() {
                       </button>
 
                       {/* תוכן המשימה */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 overflow-hidden">
                         <p
-                          className={`text-btk-dark-gray break-words ${
+                          className={`text-btk-dark-gray break-words overflow-wrap-anywhere ${
                             task.completed ? 'line-through opacity-60' : ''
                           }`}
                         >
@@ -228,7 +229,7 @@ function TaskDrawer() {
 
                         {task.dueDate && (
                           <div
-                            className={`text-xs mt-2 inline-block px-2 py-1 rounded ${
+                            className={`text-xs mt-2 inline-block px-2 py-1 rounded max-w-full ${
                               task.completed
                                 ? 'bg-gray-200 text-gray-500'
                                 : isOverdue(task.dueDate)
@@ -258,11 +259,11 @@ function TaskDrawer() {
 
           {/* סטטיסטיקות */}
           {tasks.length > 0 && (
-            <div className="border-t border-btk-light-gray p-4 bg-btk-light-gray mt-auto">
-              <div className="flex justify-between text-sm text-btk-dark-gray">
-                <span>סה"כ משימות: <strong>{tasks.length}</strong></span>
-                <span>פעילות: <strong>{activeTasks}</strong></span>
-                <span>הושלמו: <strong>{tasks.length - activeTasks}</strong></span>
+            <div className="border-t border-btk-light-gray p-4 bg-btk-light-gray mt-auto -mx-4 sm:-mx-6">
+              <div className="flex justify-between gap-2 text-xs sm:text-sm text-btk-dark-gray flex-wrap">
+                <span className="whitespace-nowrap">סה"כ משימות: <strong>{tasks.length}</strong></span>
+                <span className="whitespace-nowrap">פעילות: <strong>{activeTasks}</strong></span>
+                <span className="whitespace-nowrap">הושלמו: <strong>{tasks.length - activeTasks}</strong></span>
               </div>
             </div>
           )}
