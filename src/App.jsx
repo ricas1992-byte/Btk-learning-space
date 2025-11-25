@@ -14,6 +14,11 @@ function App() {
   // Authentication
   const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
 
+  // לוג למעקב אחרי מצב ההתחברות
+  useEffect(() => {
+    console.log('[App] Auth state changed - user:', user?.email || 'null', 'loading:', authLoading);
+  }, [user, authLoading]);
+
   // מצבי ניווט
   const [currentView, setCurrentView] = useState('library'); // 'library', 'upload', 'course', 'lesson'
   const [selectedCourseId, setSelectedCourseId] = useState(null);
@@ -83,9 +88,10 @@ function App() {
   // טיפול בהתחברות
   const handleSignIn = async () => {
     try {
+      console.log('[App] handleSignIn called');
       await signInWithGoogle();
     } catch (error) {
-      console.error('Error during sign in:', error);
+      console.error('[App] Error during sign in:', error);
       alert('שגיאה בהתחברות. אנא נסה שנית.');
     }
   };
