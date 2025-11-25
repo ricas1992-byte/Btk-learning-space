@@ -6,6 +6,7 @@ import UploadForm from './components/UploadForm';
 import CourseLibrary from './components/CourseLibrary';
 import CourseView from './components/CourseView';
 import LessonPlayer from './components/LessonPlayer';
+import TaskDrawer from './components/TaskDrawer';
 
 /**
  * App - הקומפוננט הראשי של האפליקציה
@@ -384,6 +385,9 @@ function App() {
           </p>
         </div>
       </footer>
+
+      {/* מגירת משימות */}
+      <TaskDrawer />
     </div>
   );
 }
