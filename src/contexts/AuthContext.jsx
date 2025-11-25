@@ -27,29 +27,16 @@ export function AuthProvider({ children }) {
     console.log('[AuthContext] Current auth object:', auth);
     console.log('[AuthContext] Current user from auth:', auth.currentUser?.email || 'null');
 
-    // בדיקת localStorage ו-sessionStorage לדיבאג
-    console.log('[AuthContext] Checking storage:');
-    try {
-      // Firebase שומר את ה-auth state תחת מפתחות ספציפיים
-      const localStorageKeys = Object.keys(localStorage);
-      console.log('[AuthContext] localStorage keys:', localStorageKeys);
-      const firebaseKeys = localStorageKeys.filter(key => key.includes('firebase'));
-      console.log('[AuthContext] Firebase related keys:', firebaseKeys);
+    // משתנה עבור cleanup
+    let unsubscribe;
 
-      // הדפס את התוכן של כל מפתח Firebase
-      firebaseKeys.forEach(key => {
-        const value = localStorage.getItem(key);
-        console.log(`[AuthContext] localStorage['${key}']:`, value?.substring(0, 100) + '...');
-      });
-    } catch (e) {
-      console.error('[AuthContext] Error checking localStorage:', e);
-    }
+    // פונקציה אסינכרונית לטיפול ב-redirect ואז ב-auth state
+    const initAuth = async () => {
+      try {
+        // שלב 1: בדוק אם יש redirect result (כשהמשתמש חוזר מגוגל)
+        console.log('[AuthContext] ⏳ Calling getRedirectResult...');
+        const result = await getRedirectResult(auth);
 
-    // בדיקת תוצאה מ-redirect (כשהמשתמש חוזר מגוגל)
-    console.log('[AuthContext] Calling getRedirectResult...');
-    getRedirectResult(auth)
-      .then((result) => {
-        console.log('[AuthContext] getRedirectResult completed');
         if (result && result.user) {
           // המשתמש התחבר בהצלחה דרך redirect
           console.log('[AuthContext] ✅ User signed in via redirect:', result.user.email);
@@ -59,44 +46,49 @@ export function AuthProvider({ children }) {
             displayName: result.user.displayName,
             photoURL: result.user.photoURL
           });
+          // עדכן את ה-state מיד
           setUser(result.user);
           setLoading(false);
         } else {
           console.log('[AuthContext] No redirect result found (user did not just return from Google)');
-          // אם אין redirect result, נבדק אם יש user קיים דרך onAuthStateChanged
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('[AuthContext] ❌ Error getting redirect result:', error);
         console.error('[AuthContext] Error code:', error.code);
         console.error('[AuthContext] Error message:', error.message);
         setError(error.message);
+      }
+
+      // שלב 2: הגדר מאזין לשינויים בסטטוס ההתחברות
+      // זה ירוץ רק אחרי ש-getRedirectResult סיים
+      console.log('[AuthContext] Setting up onAuthStateChanged listener...');
+      unsubscribe = onAuthStateChanged(auth, (user) => {
+        console.log('[AuthContext] 🔔 onAuthStateChanged triggered');
+        if (user) {
+          console.log('[AuthContext] ✅ User is logged in:', user.email);
+          console.log('[AuthContext] User details:', {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL
+          });
+        } else {
+          console.log('[AuthContext] ❌ No user logged in');
+        }
+        setUser(user);
         setLoading(false);
       });
+    };
 
-    // מאזין לשינויים בסטטוס ההתחברות
-    console.log('[AuthContext] Setting up onAuthStateChanged listener...');
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('[AuthContext] 🔔 onAuthStateChanged triggered');
-      if (user) {
-        console.log('[AuthContext] ✅ User is logged in:', user.email);
-        console.log('[AuthContext] User details:', {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL
-        });
-      } else {
-        console.log('[AuthContext] ❌ No user logged in');
-      }
-      setUser(user);
-      setLoading(false);
-    });
+    // הרץ את האתחול
+    initAuth();
 
     // ניקוי המאזין כשהקומפוננט נהרס
     return () => {
       console.log('[AuthContext] Cleaning up - unsubscribing from onAuthStateChanged');
-      unsubscribe();
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, []);
 
