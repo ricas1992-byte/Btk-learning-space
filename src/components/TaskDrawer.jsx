@@ -128,12 +128,22 @@ function TaskDrawer() {
         className={`fixed inset-0 w-screen h-screen bg-white z-[1000] transition-opacity duration-300 ease-in-out ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         } flex flex-col overflow-hidden`}
-        style={{ top: 0, right: 0, bottom: 0, left: 0 }}
+        style={{
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
+          maxWidth: '100vw',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingLeft: 'env(safe-area-inset-left, 0px)',
+          paddingRight: 'env(safe-area-inset-right, 0px)'
+        }}
       >
-        {/* Container ממורכז עם padding מובייל */}
-        <div className="w-full max-w-3xl mx-auto flex flex-col h-full overflow-y-auto px-4 sm:px-6">
+        {/* Container רוחב מלא עם padding מובייל */}
+        <div className="w-full max-w-full flex flex-col h-full overflow-y-auto px-4 sm:px-6 box-border">
           {/* כותרת */}
-          <div className="bg-btk-navy text-white p-4 sm:p-5 flex items-center justify-between sticky top-0 z-10 -mx-4 sm:-mx-6">
+          <div className="bg-btk-navy text-white p-4 sm:p-5 flex items-center justify-between sticky top-0 z-10 -mx-4 sm:-mx-6 box-border w-full max-w-full">
             <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2 truncate flex-1 ml-2">
               <span className="flex-shrink-0">✓</span>
               <span className="truncate">המשימות שלי</span>
@@ -148,7 +158,7 @@ function TaskDrawer() {
           </div>
 
           {/* טופס הוספת משימה */}
-          <div className="p-4 sm:p-5 border-b border-btk-light-gray -mx-4 sm:-mx-6">
+          <div className="p-4 sm:p-5 border-b border-btk-light-gray -mx-4 sm:-mx-6 box-border w-full max-w-full">
             <form onSubmit={handleAddTask} className="space-y-3 max-w-full">
               <input
                 type="text"
@@ -179,7 +189,7 @@ function TaskDrawer() {
           </div>
 
           {/* רשימת משימות */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 box-border w-full max-w-full">
             {tasks.length === 0 ? (
               <div className="text-center text-btk-dark-gray py-12">
                 <span className="text-5xl mb-3 block opacity-30">✓</span>
@@ -259,7 +269,7 @@ function TaskDrawer() {
 
           {/* סטטיסטיקות */}
           {tasks.length > 0 && (
-            <div className="border-t border-btk-light-gray p-4 bg-btk-light-gray mt-auto -mx-4 sm:-mx-6">
+            <div className="border-t border-btk-light-gray p-4 bg-btk-light-gray mt-auto -mx-4 sm:-mx-6 box-border w-full max-w-full">
               <div className="flex justify-between gap-2 text-xs sm:text-sm text-btk-dark-gray flex-wrap">
                 <span className="whitespace-nowrap">סה"כ משימות: <strong>{tasks.length}</strong></span>
                 <span className="whitespace-nowrap">פעילות: <strong>{activeTasks}</strong></span>
