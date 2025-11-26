@@ -6,8 +6,6 @@ import UploadForm from './components/UploadForm';
 import CourseLibrary from './components/CourseLibrary';
 import CourseView from './components/CourseView';
 import LessonPlayer from './components/LessonPlayer';
-import TaskDrawer from './components/TaskDrawer';
-import TodoList from './components/TodoList';
 
 /**
  * App - הקומפוננט הראשי של האפליקציה
@@ -76,10 +74,6 @@ function App() {
 
   const navigateToUpload = () => {
     setCurrentView('upload');
-  };
-
-  const navigateToTodo = () => {
-    setCurrentView('todo');
   };
 
   const navigateToCourse = async (courseId) => {
@@ -317,16 +311,6 @@ function App() {
               >
                 העלאת קורס
               </button>
-              <button
-                onClick={navigateToTodo}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  currentView === 'todo'
-                    ? 'bg-btk-gold text-btk-navy'
-                    : 'text-btk-dark-gray hover:bg-btk-light-gray'
-                }`}
-              >
-                משימות
-              </button>
 
               {/* מידע משתמש */}
               <div className="flex items-center gap-3 border-r border-btk-light-gray pr-4">
@@ -404,19 +388,6 @@ function App() {
                 >
                   ⬆️ העלאת קורס
                 </button>
-                <button
-                  onClick={() => {
-                    navigateToTodo();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`px-4 py-3 rounded-lg font-medium transition text-right ${
-                    currentView === 'todo'
-                      ? 'bg-btk-gold text-btk-navy'
-                      : 'text-btk-dark-gray hover:bg-btk-light-gray'
-                  }`}
-                >
-                  ✓ משימות
-                </button>
 
                 {/* מידע משתמש במובייל */}
                 <div className="flex items-center gap-3 px-4 py-3 bg-btk-light-gray rounded-lg">
@@ -488,13 +459,6 @@ function App() {
             onBack={() => setCurrentView('course')}
           />
         )}
-
-        {/* אפליקציית משימות */}
-        {currentView === 'todo' && (
-          <div className="max-w-full -my-6">
-            <TodoList />
-          </div>
-        )}
       </main>
 
       {/* פוטר */}
@@ -506,9 +470,6 @@ function App() {
           </p>
         </div>
       </footer>
-
-      {/* מגירת משימות */}
-      <TaskDrawer />
     </div>
   );
 }
