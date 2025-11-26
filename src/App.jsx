@@ -44,6 +44,9 @@ function App() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
+  // מצב תפריט המבורגר
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   // TTS Engine
   const [ttsEngine] = useState(() => new TTSEngine());
   const [ttsReady, setTtsReady] = useState(false);
@@ -273,22 +276,22 @@ function App() {
   return (
     <div className="min-h-screen bg-white">
       {/* ניווט עליון */}
-      <header className="bg-white shadow-sm border-b border-btk-light-gray">
+      <header className="bg-white shadow-sm border-b border-btk-light-gray sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* לוגו */}
             <div
-              className="flex items-center gap-3 cursor-pointer"
+              className="flex items-center gap-2 cursor-pointer"
               onClick={navigateToLibrary}
             >
-              <span className="text-3xl">📚</span>
-              <h1 className="text-2xl font-bold text-btk-navy">
+              <span className="text-2xl md:text-3xl">📚</span>
+              <h1 className="text-lg md:text-2xl font-bold text-btk-navy">
                 מרחב הלמידה
               </h1>
             </div>
 
-            {/* תפריט */}
-            <nav className="flex items-center gap-4">
+            {/* תפריט דסקטופ */}
+            <nav className="hidden md:flex items-center gap-4">
               <button
                 onClick={navigateToLibrary}
                 className={`px-4 py-2 rounded-lg font-medium transition ${
@@ -331,7 +334,90 @@ function App() {
                 </button>
               </div>
             </nav>
+
+            {/* כפתור המבורגר - מובייל בלבד */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-btk-light-gray transition"
+              aria-label="תפריט"
+            >
+              <svg
+                className="w-6 h-6 text-btk-navy"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                {isMobileMenuOpen ? (
+                  <path d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
+
+          {/* תפריט מובייל נפתח */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-2 border-t border-btk-light-gray pt-4">
+              <nav className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    navigateToLibrary();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`px-4 py-3 rounded-lg font-medium transition text-right ${
+                    currentView === 'library'
+                      ? 'bg-btk-gold text-btk-navy'
+                      : 'text-btk-dark-gray hover:bg-btk-light-gray'
+                  }`}
+                >
+                  📖 ספרייה
+                </button>
+                <button
+                  onClick={() => {
+                    navigateToUpload();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`px-4 py-3 rounded-lg font-medium transition text-right ${
+                    currentView === 'upload'
+                      ? 'bg-btk-gold text-btk-navy'
+                      : 'text-btk-dark-gray hover:bg-btk-light-gray'
+                  }`}
+                >
+                  ⬆️ העלאת קורס
+                </button>
+
+                {/* מידע משתמש במובייל */}
+                <div className="flex items-center gap-3 px-4 py-3 bg-btk-light-gray rounded-lg">
+                  {user.photoURL && (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-btk-dark-gray truncate">
+                      {user.displayName || user.email}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="px-4 py-3 rounded-lg font-medium text-right bg-btk-navy text-white hover:bg-btk-dark-gray transition"
+                >
+                  🚪 התנתק
+                </button>
+              </nav>
+            </div>
+          )}
         </div>
       </header>
 
