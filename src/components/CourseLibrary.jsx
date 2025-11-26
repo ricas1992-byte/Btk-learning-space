@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getCourses, deleteCourse } from '../services/courseService';
+import TodoList from './TodoList';
 
 /**
  * CourseLibrary - ספריית קורסים
@@ -123,12 +124,27 @@ export default function CourseLibrary({ onSelectCourse }) {
 
   if (courses.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-6">
+        <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">
+          <span>📚</span>
+          <span>ספריית הקורסים</span>
+        </h1>
+
+        {/* רשימת משימות */}
+        <div className="mb-8">
+          <TodoList />
+        </div>
+
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <span>📖</span>
+          <span>הקורסים שלי</span>
+        </h2>
+
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
           <span className="text-6xl mb-4 block">📚</span>
-          <h2 className="text-2xl font-bold text-btk-navy mb-2">
+          <h3 className="text-2xl font-bold text-btk-navy mb-2">
             אין עדיין קורסים
-          </h2>
+          </h3>
           <p className="text-btk-dark-gray">
             התחל על ידי העלאת קורס DOCX חדש
           </p>
@@ -156,6 +172,16 @@ export default function CourseLibrary({ onSelectCourse }) {
           </div>
         </div>
       )}
+
+      {/* רשימת משימות */}
+      <div className="mb-8">
+        <TodoList />
+      </div>
+
+      <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+        <span>📖</span>
+        <span>הקורסים שלי</span>
+      </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map((course) => (
