@@ -28,18 +28,27 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
 
   // טעינת אוספים
   const loadCollections = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('⚠️ [QuotesLibrary] loadCollections: No user, skipping');
+      return;
+    }
 
+    console.log('🔍 [QuotesLibrary] loadCollections START for user:', user.uid);
     setLoading(true);
     setError('');
     try {
+      console.log('🔍 [QuotesLibrary] Calling getAllCollections...');
       const userCollections = await getAllCollections(user.uid);
+      console.log('✅ [QuotesLibrary] getAllCollections returned:', userCollections);
       setCollections(userCollections);
     } catch (error) {
-      console.error('Error loading collections:', error);
-      setError('שגיאה בטעינת האוספים');
+      console.error('❌ [QuotesLibrary] ERROR loading collections:', error);
+      console.error('❌ [QuotesLibrary] Error code:', error.code);
+      console.error('❌ [QuotesLibrary] Error message:', error.message);
+      setError('שגיאה בטעינת האוספים: ' + (error.message || 'שגיאה לא ידועה'));
     } finally {
       setLoading(false);
+      console.log('🔍 [QuotesLibrary] loadCollections DONE');
     }
   };
 

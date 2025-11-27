@@ -52,16 +52,21 @@ export async function saveQuote(userId, quoteData) {
  */
 export async function getAllQuotes(userId) {
   try {
-    console.log('🔍 Loading all quotes for user:', userId);
+    console.log('🔍 [getAllQuotes] START - Loading all quotes for user:', userId);
 
     const quotesRef = collection(db, 'quotes');
+    console.log('🔍 [getAllQuotes] Creating query with where + orderBy...');
+
     const q = query(
       quotesRef,
       where('userId', '==', userId),
       orderBy('createdAt', 'desc')
     );
 
+    console.log('🔍 [getAllQuotes] Executing getDocs...');
     const querySnapshot = await getDocs(q);
+    console.log('✅ [getAllQuotes] getDocs completed, processing documents...');
+
     const quotes = [];
 
     querySnapshot.forEach((doc) => {
@@ -71,10 +76,13 @@ export async function getAllQuotes(userId) {
       });
     });
 
-    console.log(`✅ Successfully loaded ${quotes.length} quotes`);
+    console.log(`✅ [getAllQuotes] DONE - Successfully loaded ${quotes.length} quotes`);
     return quotes;
   } catch (error) {
-    console.error('❌ Error getting quotes:', error);
+    console.error('❌ [getAllQuotes] ERROR:', error);
+    console.error('❌ [getAllQuotes] Error code:', error.code);
+    console.error('❌ [getAllQuotes] Error message:', error.message);
+    console.error('❌ [getAllQuotes] Full error:', JSON.stringify(error, null, 2));
     throw error;
   }
 }
@@ -122,12 +130,15 @@ export async function getQuotesByCollection(userId, collectionName) {
  */
 export async function getAllCollections(userId) {
   try {
-    console.log('🔍 Loading all collections for user:', userId);
+    console.log('🔍 [getAllCollections] START - Loading all collections for user:', userId);
 
     // קבל את כל הציטוטים
+    console.log('🔍 [getAllCollections] Calling getAllQuotes...');
     const quotes = await getAllQuotes(userId);
+    console.log('✅ [getAllCollections] getAllQuotes returned:', quotes.length, 'quotes');
 
     // צור מפה של אוספים עם ספירה
+    console.log('🔍 [getAllCollections] Building collections map...');
     const collectionsMap = {};
 
     quotes.forEach(quote => {
@@ -149,15 +160,19 @@ export async function getAllCollections(userId) {
       }
     });
 
+    console.log('🔍 [getAllCollections] Collections map built:', Object.keys(collectionsMap));
+
     // המר למערך וממיין לפי תאריך עדכון אחרון
     const collections = Object.values(collectionsMap).sort((a, b) => {
       return b.lastUpdated - a.lastUpdated;
     });
 
-    console.log(`✅ Found ${collections.length} collections`);
+    console.log(`✅ [getAllCollections] DONE - Found ${collections.length} collections:`, collections.map(c => c.name));
     return collections;
   } catch (error) {
-    console.error('❌ Error getting collections:', error);
+    console.error('❌ [getAllCollections] ERROR:', error);
+    console.error('❌ [getAllCollections] Error code:', error.code);
+    console.error('❌ [getAllCollections] Error message:', error.message);
     throw error;
   }
 }
