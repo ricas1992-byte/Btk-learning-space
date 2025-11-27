@@ -24,7 +24,7 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
   // טעינה ראשונית
   useEffect(() => {
     loadCollections();
-  }, []);
+  }, [user]); // הוסף user למערך התלות כדי לטעון כשהמשתמש זמין
 
   // טעינת אוספים
   const loadCollections = async () => {
