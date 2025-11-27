@@ -3,6 +3,10 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   getAllQuotes,
   deleteQuote,
+  getAllTags,
+  getQuotesByTag,
+  addTagToQuote,
+  removeTagFromQuote
 } from '../services/quoteService';
 
 /**
@@ -16,10 +20,14 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [allTags, setAllTags] = useState([]);           // כל התגיות עם ספירה
+  const [selectedTag, setSelectedTag] = useState(null); // תגית מסוננת נוכחית
+  const [newTagInput, setNewTagInput] = useState({});   // input עבור תגית חדשה לכל ציטוט
 
   // טעינה ראשונית
   useEffect(() => {
     loadQuotes();
+    loadTags();
   }, [user]);
 
   // טעינת כל הציטוטים
@@ -48,6 +56,24 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
     }
   };
 
+  // טעינת כל התגיות
+  const loadTags = async () => {
+    if (!user) {
+      console.log('⚠️ [QuotesLibrary] loadTags: No user, skipping');
+      return;
+    }
+
+    try {
+      console.log('🔍 [QuotesLibrary] Loading tags...');
+      const tags = await getAllTags(user.uid);
+      console.log('✅ [QuotesLibrary] Loaded', tags.length, 'tags');
+      setAllTags(tags);
+    } catch (error) {
+      console.error('❌ [QuotesLibrary] Error loading tags:', error);
+      // לא מציג שגיאה למשתמש - זה לא קריטי
+    }
+  };
+
   // מחיקת ציטוט
   const handleDeleteQuote = async (quoteId) => {
     if (!confirm('האם למחוק ציטוט זה?')) return;
@@ -67,6 +93,64 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
     if (onNavigateToCourse) {
       onNavigateToCourse(quote.courseId, quote.lessonId);
     }
+  };
+
+  // הוספת תגית לציטוט
+  const handleAddTag = async (quoteId) => {
+    const tagText = newTagInput[quoteId]?.trim();
+    if (!tagText) {
+      return;
+    }
+
+    try {
+      console.log('🏷️ Adding tag:', tagText, 'to quote:', quoteId);
+      await addTagToQuote(quoteId, tagText);
+      setNewTagInput(prev => ({ ...prev, [quoteId]: '' })); // נקה input
+      await loadQuotes(); // רענן ציטוטים
+      await loadTags();   // רענן תגיות
+      console.log('✅ Tag added successfully');
+    } catch (error) {
+      console.error('❌ Error adding tag:', error);
+      alert('שגיאה בהוספת התגית');
+    }
+  };
+
+  // הסרת תגית מציטוט
+  const handleRemoveTag = async (quoteId, tag) => {
+    try {
+      console.log('🏷️ Removing tag:', tag, 'from quote:', quoteId);
+      await removeTagFromQuote(quoteId, tag);
+      await loadQuotes();
+      await loadTags();
+      console.log('✅ Tag removed successfully');
+    } catch (error) {
+      console.error('❌ Error removing tag:', error);
+      alert('שגיאה בהסרת התגית');
+    }
+  };
+
+  // סינון לפי תגית
+  const handleFilterByTag = async (tag) => {
+    setLoading(true);
+    try {
+      console.log('🔍 Filtering by tag:', tag);
+      const filtered = await getQuotesByTag(user.uid, tag);
+      setQuotes(filtered);
+      setSelectedTag(tag);
+      console.log('✅ Filtered', filtered.length, 'quotes');
+    } catch (error) {
+      console.error('❌ Error filtering by tag:', error);
+      alert('שגיאה בטעינת ציטוטים לפי תגית');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ביטול סינון - חזרה לכל הציטוטים
+  const handleClearFilter = () => {
+    console.log('🔍 Clearing tag filter');
+    setSelectedTag(null);
+    loadQuotes();
   };
 
   // Loading state
@@ -108,10 +192,63 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
           <span>ספריית הציטוטים</span>
         </h1>
         <p className="text-btk-dark-gray mt-2">
-          {quotes.length === 0
-            ? 'אין ציטוטים שמורים'
-            : `${quotes.length} ${quotes.length === 1 ? 'ציטוט' : 'ציטוטים'}`}
+          {selectedTag ? (
+            <span>
+              מציג ציטוטים עם התגית <strong className="text-btk-gold">#{selectedTag}</strong>
+              {' '}({quotes.length} {quotes.length === 1 ? 'ציטוט' : 'ציטוטים'})
+            </span>
+          ) : (
+            <span>
+              {quotes.length === 0
+                ? 'אין ציטוטים שמורים'
+                : `${quotes.length} ${quotes.length === 1 ? 'ציטוט' : 'ציטוטים'}`}
+            </span>
+          )}
         </p>
+      </div>
+
+      {/* אזור תגיות */}
+      <div className="mb-6 bg-white border-2 border-btk-light-gray rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-bold text-btk-navy flex items-center gap-2">
+            <span>🏷️</span>
+            <span>תגיות</span>
+          </h2>
+        </div>
+
+        {allTags.length === 0 ? (
+          <p className="text-sm text-btk-dark-gray">אין תגיות עדיין</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {allTags.map(tag => (
+              <button
+                key={tag.name}
+                onClick={() => handleFilterByTag(tag.name)}
+                className={`px-4 py-2 rounded-full font-medium transition-all ${
+                  selectedTag === tag.name
+                    ? 'bg-btk-gold text-btk-navy border-2 border-btk-navy'
+                    : 'bg-btk-gold text-btk-navy hover:bg-btk-bronze'
+                }`}
+              >
+                <span>#{tag.name}</span>
+                <span className="mr-2 text-sm opacity-75">({tag.count})</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* כפתור חזרה לכל הציטוטים */}
+        {selectedTag && (
+          <div className="mt-3 pt-3 border-t border-btk-light-gray">
+            <button
+              onClick={handleClearFilter}
+              className="text-sm text-btk-gold hover:text-btk-bronze font-medium flex items-center gap-1"
+            >
+              <span>←</span>
+              <span>חזרה לכל הציטוטים</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* רשימת ציטוטים */}
@@ -152,19 +289,51 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
                 </button>
               </div>
 
-              {/* תגיות (אם יש) */}
-              {quote.tags && quote.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {quote.tags.map((tag, index) => (
+              {/* תגיות */}
+              <div className="mb-3">
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {quote.tags && quote.tags.length > 0 && quote.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-btk-light-gray text-btk-dark-gray text-xs font-medium rounded-full"
+                      className="inline-flex items-center gap-2 px-3 py-1 bg-btk-gold text-btk-navy text-sm font-medium rounded-full"
                     >
-                      #{tag}
+                      <span>#{tag}</span>
+                      <button
+                        onClick={() => handleRemoveTag(quote.id, tag)}
+                        className="text-btk-navy hover:text-red-600 font-bold transition"
+                        title="הסר תגית"
+                      >
+                        ×
+                      </button>
                     </span>
                   ))}
                 </div>
-              )}
+
+                {/* הוספת תגית חדשה */}
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={newTagInput[quote.id] || ''}
+                    onChange={(e) => setNewTagInput(prev => ({
+                      ...prev,
+                      [quote.id]: e.target.value
+                    }))}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddTag(quote.id);
+                      }
+                    }}
+                    placeholder="הוסף תגית..."
+                    className="flex-1 px-3 py-1 text-sm border border-btk-light-gray rounded-lg focus:outline-none focus:border-btk-gold"
+                  />
+                  <button
+                    onClick={() => handleAddTag(quote.id)}
+                    className="px-3 py-1 bg-btk-gold hover:bg-btk-bronze text-btk-navy text-sm font-medium rounded-lg transition"
+                  >
+                    הוסף
+                  </button>
+                </div>
+              </div>
 
               {/* אוסף (אם יש) */}
               {quote.collectionName && (
