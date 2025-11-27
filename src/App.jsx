@@ -6,6 +6,7 @@ import UploadForm from './components/UploadForm';
 import CourseLibrary from './components/CourseLibrary';
 import CourseView from './components/CourseView';
 import LessonPlayer from './components/LessonPlayer';
+import QuotesLibrary from './components/QuotesLibrary';
 
 /**
  * App - הקומפוננט הראשי של האפליקציה
@@ -33,7 +34,7 @@ function App() {
   }, [user, authLoading]);
 
   // מצבי ניווט
-  const [currentView, setCurrentView] = useState('library'); // 'library', 'upload', 'course', 'lesson', 'todo'
+  const [currentView, setCurrentView] = useState('library'); // 'library', 'upload', 'course', 'lesson', 'quotes'
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedLessonId, setSelectedLessonId] = useState(null);
@@ -76,6 +77,10 @@ function App() {
     setCurrentView('upload');
   };
 
+  const navigateToQuotes = () => {
+    setCurrentView('quotes');
+  };
+
   const navigateToCourse = async (courseId) => {
     setSelectedCourseId(courseId);
 
@@ -99,6 +104,26 @@ function App() {
   const navigateToLesson = (lessonId) => {
     setSelectedLessonId(lessonId);
     setCurrentView('lesson');
+  };
+
+  const navigateFromQuoteToCourse = async (courseId, lessonId) => {
+    // ניווט מציטוט חזרה לקורס + יחידה מקוריים
+    try {
+      const courseData = await getCourse(courseId);
+
+      if (courseData) {
+        setSelectedCourse(courseData);
+        setSelectedCourseId(courseId);
+        setSelectedLessonId(lessonId);
+        setCurrentView('lesson');
+      } else {
+        console.error('Course not found:', courseId);
+        alert('לא נמצא קורס זה');
+      }
+    } catch (error) {
+      console.error('Error loading course from quote:', error);
+      alert('שגיאה בטעינת הקורס');
+    }
   };
 
   const handleUploadSuccess = (courseId) => {
@@ -302,6 +327,16 @@ function App() {
                 ספרייה
               </button>
               <button
+                onClick={navigateToQuotes}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  currentView === 'quotes'
+                    ? 'bg-btk-gold text-btk-navy'
+                    : 'text-btk-dark-gray hover:bg-btk-light-gray'
+                }`}
+              >
+                ציטוטים
+              </button>
+              <button
                 onClick={navigateToUpload}
                 className={`px-4 py-2 rounded-lg font-medium transition ${
                   currentView === 'upload'
@@ -377,6 +412,19 @@ function App() {
                 </button>
                 <button
                   onClick={() => {
+                    navigateToQuotes();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`px-4 py-3 rounded-lg font-medium transition text-right ${
+                    currentView === 'quotes'
+                      ? 'bg-btk-gold text-btk-navy'
+                      : 'text-btk-dark-gray hover:bg-btk-light-gray'
+                  }`}
+                >
+                  💬 ציטוטים
+                </button>
+                <button
+                  onClick={() => {
                     navigateToUpload();
                     setIsMobileMenuOpen(false);
                   }}
@@ -434,6 +482,11 @@ function App() {
         {/* ספריית קורסים */}
         {currentView === 'library' && (
           <CourseLibrary onSelectCourse={navigateToCourse} />
+        )}
+
+        {/* ספריית ציטוטים */}
+        {currentView === 'quotes' && (
+          <QuotesLibrary onNavigateToCourse={navigateFromQuoteToCourse} />
         )}
 
         {/* טופס העלאה */}
