@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AudioPlayer from './AudioPlayer';
 import { useAuth } from '../contexts/AuthContext';
 import { saveQuote, getAllCollections } from '../services/quoteService';
+import { saveBookmark, getBookmark } from '../services/bookmarkService';
 
 /**
  * LessonPlayer - נגן יחידת לימוד
@@ -20,6 +21,10 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // State לניהול סימניות
+  const [bookmark, setBookmark] = useState(null);
+  const [hasScrolledToBookmark, setHasScrolledToBookmark] = useState(false);
 
   useEffect(() => {
     if (course && course.lessons) {
@@ -45,6 +50,47 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
       console.error('Error loading collections:', error);
     }
   };
+
+  // טעינת סימנייה
+  const loadBookmark = async () => {
+    if (!currentLesson || !user) return;
+
+    try {
+      console.log('🔖 Loading bookmark for lesson:', currentLesson.id);
+      const savedBookmark = await getBookmark(user.uid, currentLesson.id);
+      setBookmark(savedBookmark);
+      setHasScrolledToBookmark(false); // אפס את דגל הגלילה
+    } catch (error) {
+      console.error('Error loading bookmark:', error);
+      // לא מציג שגיאה למשתמש - זה לא קריטי
+    }
+  };
+
+  // טעינת סימנייה כשהיחידה משתנה
+  useEffect(() => {
+    loadBookmark();
+  }, [currentLesson, user]);
+
+  // גלילה אוטומטית לסימנייה
+  useEffect(() => {
+    if (bookmark && !hasScrolledToBookmark && currentLesson) {
+      console.log('🔖 Auto-scrolling to bookmark position:', bookmark.position);
+
+      // המתן שהעמוד יטען לחלוטין
+      setTimeout(() => {
+        const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrollPosition = bookmark.position * scrollHeight;
+
+        window.scrollTo({
+          top: scrollPosition,
+          behavior: 'smooth'
+        });
+
+        setHasScrolledToBookmark(true);
+        console.log('✅ Scrolled to bookmark');
+      }, 500);
+    }
+  }, [bookmark, hasScrolledToBookmark, currentLesson]);
 
   // זיהוי בחירת טקסט
   useEffect(() => {
@@ -135,6 +181,36 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
     }
   };
 
+  // שמירת מיקום נוכחי כסימנייה
+  const handleSaveBookmark = async () => {
+    if (!currentLesson || !user) return;
+
+    try {
+      // חשב את מיקום הגלילה הנוכחי
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const position = scrollHeight > 0 ? scrollTop / scrollHeight : 0;
+
+      console.log('🔖 Saving bookmark at position:', position);
+
+      await saveBookmark(user.uid, {
+        lessonId: currentLesson.id,
+        courseId: course.id,
+        courseName: course.title,
+        lessonTitle: currentLesson.title,
+        position: position
+      });
+
+      // עדכן state מקומי
+      await loadBookmark();
+
+      alert('המיקום נשמר בהצלחה! 🔖');
+    } catch (error) {
+      console.error('Error saving bookmark:', error);
+      alert('שגיאה בשמירת המיקום');
+    }
+  };
+
   if (!currentLesson) {
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -167,10 +243,32 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
 
       {/* כותרת היחידה */}
       <div className="bg-gradient-to-r from-btk-navy to-btk-dark-gray text-white p-6">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl font-bold text-btk-gold">{currentLesson.order}</span>
-          <h1 className="text-2xl font-bold">{currentLesson.title}</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl font-bold text-btk-gold">{currentLesson.order}</span>
+            <h1 className="text-2xl font-bold">{currentLesson.title}</h1>
+          </div>
+
+          {/* כפתור שמירת מיקום */}
+          <button
+            onClick={handleSaveBookmark}
+            className="px-4 py-2 bg-btk-gold hover:bg-btk-bronze text-btk-navy font-medium rounded-lg transition flex items-center gap-2 shadow-sm"
+            title="שמור מיקום נוכחי"
+          >
+            <span>🔖</span>
+            <span>שמור מיקום</span>
+          </button>
         </div>
+
+        {/* אינדיקציה לסימנייה קיימת */}
+        {bookmark && (
+          <div className="mt-3 text-sm text-btk-gold flex items-center gap-2">
+            <span>🔖</span>
+            <span>
+              יש סימנייה שמורה מ-{new Date(bookmark.updatedAt?.toMillis?.() || bookmark.createdAt?.toMillis?.() || 0).toLocaleDateString('he-IL')}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* כפתור שמירת ציטוט - מופיע רק כשיש טקסט מסומן */}
