@@ -8,6 +8,7 @@ import {
   addTagToQuote,
   removeTagFromQuote
 } from '../services/quoteService';
+import { exportQuotesToMarkdown, shareOrDownload } from '../utils/exportUtils';
 
 /**
  * QuotesLibrary - ספריית ציטוטים
@@ -153,6 +154,32 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
     loadQuotes();
   };
 
+  // ייצוא ציטוטים ל-Markdown
+  const handleExport = async () => {
+    try {
+      // קבע כותרת לפי מצב סינון
+      const title = selectedTag
+        ? `#${selectedTag}`
+        : 'כל הציטוטים';
+
+      // המר לMarkdown
+      const markdown = exportQuotesToMarkdown(quotes, title);
+
+      // שם קובץ עם תאריך
+      const today = new Date().toLocaleDateString('he-IL').replace(/\./g, '-');
+      const filename = selectedTag
+        ? `ציטוטים-${selectedTag}-${today}.md`
+        : `ציטוטים-${today}.md`;
+
+      // שתף או הורד
+      await shareOrDownload(markdown, filename);
+
+    } catch (error) {
+      console.error('Error exporting quotes:', error);
+      alert('שגיאה בייצוא הציטוטים');
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -187,10 +214,28 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
     <div className="max-w-4xl mx-auto p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-btk-navy flex items-center gap-2">
-          <span>💬</span>
-          <span>ספריית הציטוטים</span>
-        </h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold text-btk-navy flex items-center gap-2">
+            <span>💬</span>
+            <span>ספריית הציטוטים</span>
+          </h1>
+
+          {/* כפתור ייצוא */}
+          <button
+            onClick={handleExport}
+            disabled={quotes.length === 0}
+            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+              quotes.length === 0
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-btk-gold hover:bg-btk-bronze text-btk-navy'
+            }`}
+            title={quotes.length === 0 ? 'אין ציטוטים לייצוא' : 'ייצוא ציטוטים'}
+          >
+            <span>📥</span>
+            <span>ייצוא</span>
+          </button>
+        </div>
+
         <p className="text-btk-dark-gray mt-2">
           {selectedTag ? (
             <span>
