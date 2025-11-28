@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getCourses, deleteCourse } from '../services/courseService';
+import { calculateCourseProgress, getCourseStatus } from '../services/progressService';
 import TodoList from './TodoList';
 
 /**
@@ -11,6 +12,7 @@ export default function CourseLibrary({ onSelectCourse }) {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [coursesProgress, setCoursesProgress] = useState({});
 
   useEffect(() => {
     loadCourses();
@@ -48,6 +50,15 @@ export default function CourseLibrary({ onSelectCourse }) {
       console.log('📚 CourseLibrary: Processed courses index:', coursesIndex);
 
       setCourses(coursesIndex);
+
+      // טען התקדמות עבור כל קורס
+      const progressData = {};
+      for (const course of coursesIndex) {
+        const progress = await calculateCourseProgress(user.uid, course.id, course.lessonCount);
+        progressData[course.id] = progress;
+      }
+      setCoursesProgress(progressData);
+
       setError('');
     } catch (err) {
       console.error('❌ Error loading courses:', err);
@@ -184,73 +195,112 @@ export default function CourseLibrary({ onSelectCourse }) {
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map((course) => (
-          <div
-            key={course.id}
-            className="bg-white rounded-lg border border-btk-light-gray shadow-sm hover:shadow-md transition-shadow p-6 relative"
-          >
-            {/* כפתור מחיקה */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(course.id);
-              }}
-              className="absolute top-2 left-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors duration-200"
-              title="מחק קורס"
+        {courses.map((course) => {
+          const progress = coursesProgress[course.id] || { completed: 0, total: course.lessonCount, percentage: 0 };
+          const status = getCourseStatus(progress.completed, progress.total);
+
+          return (
+            <div
+              key={course.id}
+              className="bg-white rounded-lg border border-btk-light-gray shadow-sm hover:shadow-md transition-shadow p-6 relative"
             >
-              🗑️
-            </button>
+              {/* כפתור מחיקה */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(course.id);
+                }}
+                className="absolute top-2 left-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-colors duration-200"
+                title="מחק קורס"
+              >
+                🗑️
+              </button>
 
-            {/* אייקון */}
-            <div className="text-4xl mb-3">📖</div>
-
-            {/* שם הקורס */}
-            <h3 className="text-xl font-bold text-btk-navy mb-2">
-              {course.title}
-            </h3>
-
-            {/* תיאור */}
-            {course.description && (
-              <p className="text-btk-dark-gray mb-3 line-clamp-2">
-                {course.description}
-              </p>
-            )}
-
-            {/* תגיות */}
-            {course.tags && course.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {course.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="bg-btk-light-gray text-btk-dark-gray text-sm px-3 py-1 rounded-full"
-                  >
-                    #{tag}
-                  </span>
-                ))}
+              {/* סטטוס */}
+              <div className="absolute top-2 right-2">
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                  status === 'הושלם' ? 'bg-green-100 text-green-700' :
+                  status === 'בתהליך' ? 'bg-blue-100 text-blue-700' :
+                  'bg-gray-100 text-gray-600'
+                }`}>
+                  {status}
+                </span>
               </div>
-            )}
 
-            {/* מידע נוסף */}
-            <div className="text-sm text-btk-dark-gray mb-4">
-              <span>{course.lessonCount} יחידות</span>
-              <span className="mx-2">|</span>
-              <span>{course.language === 'he' ? 'עברית' : 'אנגלית'}</span>
+              {/* אייקון */}
+              <div className="text-4xl mb-3">📖</div>
+
+              {/* שם הקורס */}
+              <h3 className="text-xl font-bold text-btk-navy mb-2">
+                {course.title}
+              </h3>
+
+              {/* תיאור */}
+              {course.description && (
+                <p className="text-btk-dark-gray mb-3 line-clamp-2">
+                  {course.description}
+                </p>
+              )}
+
+              {/* תגיות */}
+              {course.tags && course.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {course.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="bg-btk-light-gray text-btk-dark-gray text-sm px-3 py-1 rounded-full"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* התקדמות */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-btk-dark-gray">
+                    {progress.completed} מתוך {progress.total} יחידות
+                  </span>
+                  <span className="text-sm font-bold text-btk-navy">
+                    {progress.percentage}%
+                  </span>
+                </div>
+                {/* פס התקדמות */}
+                <div className="w-full bg-btk-light-gray rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      progress.percentage === 100 ? 'bg-green-500' :
+                      progress.percentage > 0 ? 'bg-btk-gold' :
+                      'bg-gray-300'
+                    }`}
+                    style={{ width: `${progress.percentage}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* מידע נוסף */}
+              <div className="text-sm text-btk-dark-gray mb-3">
+                <span>{course.lessonCount} יחידות</span>
+                <span className="mx-2">|</span>
+                <span>{course.language === 'he' ? 'עברית' : 'אנגלית'}</span>
+              </div>
+
+              {/* תאריך */}
+              <div className="text-xs text-btk-dark-gray mb-4 opacity-70">
+                נוצר ב-{formatDate(course.createdAt)}
+              </div>
+
+              {/* כפתור צפייה */}
+              <button
+                onClick={() => onSelectCourse(course.id)}
+                className="w-full bg-btk-gold hover:bg-btk-bronze text-btk-navy font-semibold py-2 rounded-lg transition"
+              >
+                צפייה בקורס
+              </button>
             </div>
-
-            {/* תאריך */}
-            <div className="text-xs text-btk-dark-gray mb-4 opacity-70">
-              נוצר ב-{formatDate(course.createdAt)}
-            </div>
-
-            {/* כפתור צפייה */}
-            <button
-              onClick={() => onSelectCourse(course.id)}
-              className="w-full bg-btk-gold hover:bg-btk-bronze text-btk-navy font-semibold py-2 rounded-lg transition"
-            >
-              צפייה בקורס
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

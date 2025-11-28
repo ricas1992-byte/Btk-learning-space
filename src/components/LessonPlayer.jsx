@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import FloatingTTSBar from './FloatingTTSBar';
+import NotesPanel from './NotesPanel';
 import { useAuth } from '../contexts/AuthContext';
 import { saveQuote, getAllCollections } from '../services/quoteService';
 import { saveBookmark, getBookmark } from '../services/bookmarkService';
+import { saveNote, getLessonNotes } from '../services/noteService';
+import { markLessonComplete, markLessonIncomplete, isLessonComplete } from '../services/progressService';
 
 /**
  * LessonPlayer - נגן יחידת לימוד
@@ -25,6 +28,16 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
   // State לניהול סימניות
   const [bookmark, setBookmark] = useState(null);
   const [hasScrolledToBookmark, setHasScrolledToBookmark] = useState(false);
+
+  // State לניהול הערות
+  const [notes, setNotes] = useState([]);
+  const [showNotesPanel, setShowNotesPanel] = useState(false);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const [noteContext, setNoteContext] = useState('');
+
+  // State למעקב התקדמות
+  const [lessonCompleted, setLessonCompleted] = useState(false);
 
   useEffect(() => {
     if (course && course.lessons) {
@@ -71,6 +84,38 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
     loadBookmark();
   }, [currentLesson, user]);
 
+  // טעינת הערות כשהיחידה משתנה
+  useEffect(() => {
+    loadNotes();
+  }, [currentLesson, user]);
+
+  // בדיקת סטטוס השלמה כשהיחידה משתנה
+  useEffect(() => {
+    checkLessonCompletion();
+  }, [currentLesson, user]);
+
+  const loadNotes = async () => {
+    if (!currentLesson || !user) return;
+
+    try {
+      const lessonNotes = await getLessonNotes(user.uid, currentLesson.id);
+      setNotes(lessonNotes);
+    } catch (error) {
+      console.error('Error loading notes:', error);
+    }
+  };
+
+  const checkLessonCompletion = async () => {
+    if (!currentLesson || !user || !course) return;
+
+    try {
+      const completed = await isLessonComplete(user.uid, course.id, currentLesson.id);
+      setLessonCompleted(completed);
+    } catch (error) {
+      console.error('Error checking lesson completion:', error);
+    }
+  };
+
   // גלילה אוטומטית לסימנייה
   useEffect(() => {
     if (bookmark && !hasScrolledToBookmark && currentLesson) {
@@ -92,8 +137,10 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
     }
   }, [bookmark, hasScrolledToBookmark, currentLesson]);
 
-  // זיהוי בחירת טקסט
+  // זיהוי בחירת טקסט (לציטוטים והערות)
   useEffect(() => {
+    let longPressTimer = null;
+
     const handleTextSelection = () => {
       const selection = window.getSelection();
       const text = selection.toString().trim();
@@ -105,13 +152,39 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
       }
     };
 
+    // זיהוי לחיצה ארוכה להוספת הערה
+    const handleTouchStart = (e) => {
+      longPressTimer = setTimeout(() => {
+        const selection = window.getSelection();
+        const text = selection.toString().trim();
+        if (text.length > 0) {
+          setNoteContext(text);
+          setShowNoteModal(true);
+        }
+      }, 500); // 500ms לחיצה ארוכה
+    };
+
+    const handleTouchEnd = () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    };
+
     // הוסף event listeners
     document.addEventListener('mouseup', handleTextSelection);
-    document.addEventListener('touchend', handleTextSelection); // לתמיכה במובייל
+    document.addEventListener('touchend', handleTextSelection);
+    document.addEventListener('touchstart', handleTouchStart);
+    document.addEventListener('touchend', handleTouchEnd);
 
     return () => {
       document.removeEventListener('mouseup', handleTextSelection);
       document.removeEventListener('touchend', handleTextSelection);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+      }
     };
   }, []);
 
@@ -211,6 +284,59 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
     }
   };
 
+  // שמירת הערה
+  const handleSaveNote = async () => {
+    if (!noteText.trim() || !currentLesson || !user) return;
+
+    try {
+      await saveNote(user.uid, {
+        courseId: course.id,
+        lessonId: currentLesson.id,
+        content: noteText,
+        context: noteContext,
+        paragraphIndex: 0, // ניתן לשפר בעתיד
+      });
+
+      // רענן את רשימת ההערות
+      await loadNotes();
+
+      // איפוס הטופס
+      setShowNoteModal(false);
+      setNoteText('');
+      setNoteContext('');
+      window.getSelection().removeAllRanges();
+
+      alert('ההערה נשמרה בהצלחה! 📝');
+    } catch (error) {
+      console.error('Error saving note:', error);
+      alert('שגיאה בשמירת ההערה');
+    }
+  };
+
+  // סימון יחידה כהושלמה
+  const handleToggleLessonComplete = async () => {
+    if (!currentLesson || !user || !course) return;
+
+    try {
+      if (lessonCompleted) {
+        await markLessonIncomplete(user.uid, course.id, currentLesson.id);
+        setLessonCompleted(false);
+      } else {
+        await markLessonComplete(user.uid, course.id, currentLesson.id);
+        setLessonCompleted(true);
+        // אופציונלי: עבור ליחידה הבאה אוטומטית
+        setTimeout(() => {
+          if (lessonIndex < course.lessons.length - 1) {
+            goToNextLesson();
+          }
+        }, 1000);
+      }
+    } catch (error) {
+      console.error('Error toggling lesson completion:', error);
+      alert('שגיאה בעדכון סטטוס היחידה');
+    }
+  };
+
   if (!currentLesson) {
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -243,20 +369,52 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
 
       {/* כותרת היחידה */}
       <div className="bg-gradient-to-r from-btk-navy to-btk-dark-gray text-white p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <span className="text-3xl font-bold text-btk-gold">{currentLesson.order}</span>
             <h1 className="text-2xl font-bold">{currentLesson.title}</h1>
           </div>
+        </div>
 
+        {/* שורת כפתורי פעולה */}
+        <div className="flex flex-wrap gap-2">
           {/* כפתור שמירת מיקום */}
           <button
             onClick={handleSaveBookmark}
-            className="px-4 py-2 bg-btk-gold hover:bg-btk-bronze text-btk-navy font-medium rounded-lg transition flex items-center gap-2 shadow-sm"
+            className="px-3 py-2 bg-btk-gold hover:bg-btk-bronze text-btk-navy font-medium rounded-lg transition flex items-center gap-2 shadow-sm text-sm"
             title="שמור מיקום נוכחי"
           >
             <span>🔖</span>
             <span>שמור מיקום</span>
+          </button>
+
+          {/* כפתור הצגת הערות */}
+          <button
+            onClick={() => setShowNotesPanel(true)}
+            className="px-3 py-2 bg-white hover:bg-btk-light-gray text-btk-navy font-medium rounded-lg transition flex items-center gap-2 shadow-sm text-sm"
+            title="הצג הערות"
+          >
+            <span>📝</span>
+            <span>הערות</span>
+            {notes.length > 0 && (
+              <span className="bg-btk-gold text-btk-navy rounded-full px-2 py-0.5 text-xs font-bold">
+                {notes.length}
+              </span>
+            )}
+          </button>
+
+          {/* כפתור סימון יחידה כהושלמה */}
+          <button
+            onClick={handleToggleLessonComplete}
+            className={`px-3 py-2 font-medium rounded-lg transition flex items-center gap-2 shadow-sm text-sm ${
+              lessonCompleted
+                ? 'bg-green-500 hover:bg-green-600 text-white'
+                : 'bg-white hover:bg-btk-light-gray text-btk-navy'
+            }`}
+            title={lessonCompleted ? 'סמן כלא הושלם' : 'סיימתי יחידה זו'}
+          >
+            <span>{lessonCompleted ? '✓' : '○'}</span>
+            <span>{lessonCompleted ? 'הושלמה' : 'סיימתי יחידה'}</span>
           </button>
         </div>
 
@@ -271,19 +429,30 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
         )}
       </div>
 
-      {/* כפתור שמירת ציטוט - מופיע רק כשיש טקסט מסומן */}
+      {/* כפתור שמירת ציטוט/הערה - מופיע רק כשיש טקסט מסומן */}
       {selectedText && (
         <div className="bg-btk-gold border-b border-btk-bronze p-3 sticky top-0 z-10 shadow-md">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <span className="text-sm text-btk-navy font-medium">
               נבחר טקסט ({selectedText.length} תווים)
             </span>
-            <button
-              onClick={() => setShowQuoteModal(true)}
-              className="px-4 py-2 bg-btk-navy hover:bg-btk-dark-gray text-white font-medium rounded-lg transition shadow-sm"
-            >
-              💾 שמור ציטוט
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setNoteContext(selectedText);
+                  setShowNoteModal(true);
+                }}
+                className="px-4 py-2 bg-white hover:bg-btk-light-gray text-btk-navy font-medium rounded-lg transition shadow-sm"
+              >
+                📝 הוסף הערה
+              </button>
+              <button
+                onClick={() => setShowQuoteModal(true)}
+                className="px-4 py-2 bg-btk-navy hover:bg-btk-dark-gray text-white font-medium rounded-lg transition shadow-sm"
+              >
+                💾 שמור ציטוט
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -410,6 +579,68 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal להוספת הערה */}
+      {showNoteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-btk-navy mb-4">הוספת הערה</h3>
+
+            {/* תצוגת ההקשר */}
+            {noteContext && (
+              <div className="bg-btk-light-gray p-3 rounded-lg mb-4 max-h-32 overflow-y-auto">
+                <p className="text-sm text-btk-dark-gray italic">
+                  "{noteContext}"
+                </p>
+              </div>
+            )}
+
+            {/* תיבת הערה */}
+            <textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="כתוב את ההערה שלך כאן..."
+              className="w-full border border-btk-light-gray rounded-lg p-3 min-h-[120px] focus:ring-2 focus:ring-btk-gold focus:border-transparent resize-none"
+              autoFocus
+            />
+
+            {/* כפתורי פעולה */}
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowNoteModal(false);
+                  setNoteText('');
+                  setNoteContext('');
+                  window.getSelection().removeAllRanges();
+                }}
+                className="flex-1 px-4 py-2 bg-white hover:bg-btk-light-gray text-btk-dark-gray border border-btk-light-gray font-medium rounded-lg transition"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={handleSaveNote}
+                disabled={!noteText.trim()}
+                className="flex-1 px-4 py-2 bg-btk-gold hover:bg-btk-bronze text-btk-navy font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                שמור הערה
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* פאנל תצוגת הערות */}
+      {showNotesPanel && (
+        <NotesPanel
+          userId={user.uid}
+          lessonId={currentLesson.id}
+          onClose={() => setShowNotesPanel(false)}
+          onNoteClick={(note) => {
+            // אפשר להוסיף פונקציונליות לקפיצה למיקום ההערה
+            setShowNotesPanel(false);
+          }}
+        />
       )}
 
       {/* בר הקראה צף */}

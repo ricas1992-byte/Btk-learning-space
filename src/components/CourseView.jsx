@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getCourse } from '../services/courseService';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllBookmarks } from '../services/bookmarkService';
+import { getCourseProgress } from '../services/progressService';
 
 /**
  * CourseView - תצוגת קורס ויחידות הלימוד
@@ -11,6 +12,7 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [bookmarks, setBookmarks] = useState([]);
+  const [completedLessons, setCompletedLessons] = useState(new Set());
   const { user } = useAuth();
 
   useEffect(() => {
@@ -20,6 +22,24 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
   useEffect(() => {
     loadBookmarks();
   }, [user]);
+
+  useEffect(() => {
+    loadProgress();
+  }, [user, courseId]);
+
+  const loadProgress = async () => {
+    if (!user || !courseId) return;
+
+    try {
+      const progress = await getCourseProgress(user.uid, courseId);
+      const completed = new Set(
+        progress.filter(p => p.completed).map(p => p.lessonId)
+      );
+      setCompletedLessons(completed);
+    } catch (error) {
+      console.error('Error loading progress:', error);
+    }
+  };
 
   const loadCourse = async () => {
     try {
@@ -152,33 +172,70 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
 
         <div className="space-y-3">
           {course.lessons && course.lessons.length > 0 ? (
-            course.lessons.map((lesson) => (
-              <div
-                key={lesson.id}
-                className="border border-btk-light-gray rounded-lg p-4 hover:bg-btk-light-gray hover:bg-opacity-30 transition flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-btk-gold">
-                    {lesson.order}
-                  </span>
-                  <h3 className="text-lg font-medium text-btk-navy">
-                    {lesson.title}
-                  </h3>
-                  {/* אייקון סימנייה */}
-                  {hasBookmark(lesson.id) && (
-                    <span className="text-sm" title="יש סימנייה שמורה">🔖</span>
-                  )}
-                </div>
+            course.lessons.map((lesson, index) => {
+              const isCompleted = completedLessons.has(lesson.id);
+              const isNextLesson = !isCompleted &&
+                (index === 0 || completedLessons.has(course.lessons[index - 1].id));
 
-                <button
-                  onClick={() => onSelectLesson(lesson.id)}
-                  className="bg-btk-gold hover:bg-btk-bronze text-btk-navy px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2"
+              return (
+                <div
+                  key={lesson.id}
+                  className={`border rounded-lg p-4 transition flex items-center justify-between ${
+                    isCompleted
+                      ? 'border-green-300 bg-green-50 bg-opacity-50'
+                      : isNextLesson
+                        ? 'border-btk-gold bg-btk-gold bg-opacity-10 ring-2 ring-btk-gold ring-opacity-30'
+                        : 'border-btk-light-gray hover:bg-btk-light-gray hover:bg-opacity-30'
+                  }`}
                 >
-                  <span>למידה</span>
-                  <span>→</span>
-                </button>
-              </div>
-            ))
+                  <div className="flex items-center gap-3">
+                    {/* אייקון השלמה או מספר */}
+                    {isCompleted ? (
+                      <span className="text-2xl font-bold text-green-600" title="יחידה הושלמה">
+                        ✓
+                      </span>
+                    ) : (
+                      <span className={`text-2xl font-bold ${isNextLesson ? 'text-btk-gold' : 'text-btk-dark-gray'}`}>
+                        {lesson.order}
+                      </span>
+                    )}
+
+                    <div>
+                      <h3 className={`text-lg font-medium ${isCompleted ? 'text-green-700' : 'text-btk-navy'}`}>
+                        {lesson.title}
+                      </h3>
+                      {isNextLesson && !isCompleted && (
+                        <p className="text-xs text-btk-gold font-medium mt-1">המשך ללמוד ←</p>
+                      )}
+                      {isCompleted && (
+                        <p className="text-xs text-green-600 mt-1">הושלמה ✓</p>
+                      )}
+                    </div>
+
+                    {/* אייקונים נוספים */}
+                    <div className="flex gap-2 mr-3">
+                      {hasBookmark(lesson.id) && (
+                        <span className="text-sm" title="יש סימנייה שמורה">🔖</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => onSelectLesson(lesson.id)}
+                    className={`px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2 ${
+                      isCompleted
+                        ? 'bg-green-500 hover:bg-green-600 text-white'
+                        : isNextLesson
+                          ? 'bg-btk-gold hover:bg-btk-bronze text-btk-navy'
+                          : 'bg-btk-gold hover:bg-btk-bronze text-btk-navy'
+                    }`}
+                  >
+                    <span>{isCompleted ? 'חזור' : 'למידה'}</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              );
+            })
           ) : (
             <p className="text-btk-dark-gray text-center py-4">
               אין יחידות בקורס זה
