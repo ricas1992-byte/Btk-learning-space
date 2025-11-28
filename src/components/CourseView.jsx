@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getCourse } from '../services/courseService';
 import { useAuth } from '../contexts/AuthContext';
+import { getAllBookmarks } from '../services/bookmarkService';
 
 /**
  * CourseView - תצוגת קורס ויחידות הלימוד
@@ -9,11 +10,16 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [bookmarks, setBookmarks] = useState([]);
   const { user } = useAuth();
 
   useEffect(() => {
     loadCourse();
   }, [courseId]);
+
+  useEffect(() => {
+    loadBookmarks();
+  }, [user]);
 
   const loadCourse = async () => {
     try {
@@ -48,6 +54,24 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadBookmarks = async () => {
+    if (!user) return;
+
+    try {
+      console.log('🔖 Loading bookmarks for user:', user.uid);
+      const userBookmarks = await getAllBookmarks(user.uid);
+      setBookmarks(userBookmarks);
+      console.log('✅ Loaded', userBookmarks.length, 'bookmarks');
+    } catch (error) {
+      console.error('Error loading bookmarks:', error);
+      // לא מציג שגיאה למשתמש - זה לא קריטי
+    }
+  };
+
+  const hasBookmark = (lessonId) => {
+    return bookmarks.some(b => b.lessonId === lessonId);
   };
 
   if (loading) {
@@ -140,6 +164,10 @@ export default function CourseView({ courseId, onBack, onSelectLesson }) {
                   <h3 className="text-lg font-medium text-btk-navy">
                     {lesson.title}
                   </h3>
+                  {/* אייקון סימנייה */}
+                  {hasBookmark(lesson.id) && (
+                    <span className="text-sm" title="יש סימנייה שמורה">🔖</span>
+                  )}
                 </div>
 
                 <button
