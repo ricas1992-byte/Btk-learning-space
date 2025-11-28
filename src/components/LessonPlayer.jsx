@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import AudioPlayer from './AudioPlayer';
+import FloatingTTSBar from './FloatingTTSBar';
 import { useAuth } from '../contexts/AuthContext';
 import { saveQuote, getAllCollections } from '../services/quoteService';
 import { saveBookmark, getBookmark } from '../services/bookmarkService';
@@ -229,7 +229,7 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto pb-32">
       {/* כפתור חזרה */}
       <div className="bg-white border-b border-btk-light-gray p-4">
         <button
@@ -295,13 +295,6 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
           dangerouslySetInnerHTML={{ __html: currentLesson.contentHtml }}
         />
       </div>
-
-      {/* נגן אודיו */}
-      <AudioPlayer
-        ttsEngine={ttsEngine}
-        text={currentLesson.contentText}
-        onEnd={handleLessonEnd}
-      />
 
       {/* ניווט בין יחידות */}
       <div className="bg-white border-t border-btk-light-gray p-4">
@@ -418,6 +411,13 @@ export default function LessonPlayer({ course, lessonId, ttsEngine, onBack }) {
           </div>
         </div>
       )}
+
+      {/* בר הקראה צף */}
+      <FloatingTTSBar
+        ttsEngine={ttsEngine}
+        text={currentLesson.contentText}
+        onEnd={handleLessonEnd}
+      />
     </div>
   );
 }
