@@ -24,6 +24,7 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
   const [allTags, setAllTags] = useState([]);           // כל התגיות עם ספירה
   const [selectedTag, setSelectedTag] = useState(null); // תגית מסוננת נוכחית
   const [newTagInput, setNewTagInput] = useState({});   // input עבור תגית חדשה לכל ציטוט
+  const [searchQuery, setSearchQuery] = useState('');   // מחרוזת חיפוש
 
   // טעינה ראשונית
   useEffect(() => {
@@ -180,6 +181,18 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
     }
   };
 
+  // סינון ציטוטים לפי חיפוש
+  const filteredQuotes = quotes.filter(quote => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      quote.text?.toLowerCase().includes(query) ||
+      quote.courseName?.toLowerCase().includes(query) ||
+      quote.lessonTitle?.toLowerCase().includes(query) ||
+      quote.tags?.some(tag => tag.toLowerCase().includes(query))
+    );
+  });
+
   // Loading state
   if (loading) {
     return (
@@ -296,20 +309,77 @@ export default function QuotesLibrary({ onNavigateToCourse }) {
         )}
       </div>
 
+      {/* שדה חיפוש */}
+      <div className="mb-6 bg-white border-2 border-btk-light-gray rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-bold text-btk-navy flex items-center gap-2">
+            <span>🔍</span>
+            <span>חיפוש</span>
+          </h2>
+        </div>
+
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="חפש בציטוטים, קורסים, יחידות או תגיות..."
+            className="w-full px-4 py-3 pr-10 border border-btk-light-gray rounded-lg focus:outline-none focus:border-btk-gold text-right"
+          />
+
+          {/* אייקון זכוכית מגדלת */}
+          <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-btk-dark-gray">
+            🔍
+          </span>
+
+          {/* כפתור ניקוי */}
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-btk-dark-gray hover:text-btk-navy font-bold text-xl transition"
+              title="נקה חיפוש"
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        {/* מידע על תוצאות */}
+        {searchQuery && (
+          <p className="mt-2 text-sm text-btk-dark-gray">
+            נמצאו {filteredQuotes.length} {filteredQuotes.length === 1 ? 'ציטוט' : 'ציטוטים'}
+          </p>
+        )}
+      </div>
+
       {/* רשימת ציטוטים */}
-      {quotes.length === 0 ? (
+      {filteredQuotes.length === 0 ? (
         <div className="bg-btk-light-gray rounded-lg p-8 text-center">
-          <span className="text-6xl mb-4 block">📖</span>
+          <span className="text-6xl mb-4 block">
+            {searchQuery ? '🔍' : '📖'}
+          </span>
           <p className="text-btk-dark-gray text-lg font-medium mb-2">
-            עדיין לא שמרת ציטוטים
+            {searchQuery
+              ? 'לא נמצאו תוצאות'
+              : 'עדיין לא שמרת ציטוטים'}
           </p>
           <p className="text-sm text-btk-dark-gray">
-            בחר טקסט בזמן קריאת יחידה ושמור אותו כציטוט.
+            {searchQuery
+              ? `לא נמצאו ציטוטים המכילים "${searchQuery}"`
+              : 'בחר טקסט בזמן קריאת יחידה ושמור אותו כציטוט.'}
           </p>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="mt-4 px-4 py-2 bg-btk-gold hover:bg-btk-bronze text-btk-navy font-medium rounded-lg transition"
+            >
+              נקה חיפוש
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
-          {quotes.map((quote) => (
+          {filteredQuotes.map((quote) => (
             <div
               key={quote.id}
               className="bg-white border-2 border-btk-light-gray rounded-lg p-6 hover:shadow-md transition-all"
